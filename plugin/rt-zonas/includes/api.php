@@ -102,6 +102,7 @@ function rtz_zona_publica( $r ) {
 		'codigo'           => (string) $r['codigo'],
 		'nombre'           => (string) $r['nombre'],
 		'lugar'            => (string) $r['lugar'],
+		'barrios'          => isset( $r['barrios'] ) && is_string( $r['barrios'] ) ? array_values( (array) json_decode( $r['barrios'], true ) ) : array(),
 		'municipio_georef' => (string) $r['municipio_georef'],
 		'localidad_id'     => (int) $r['localidad_id'],
 		'provincia_georef' => (string) $r['provincia_georef'],
@@ -112,4 +113,42 @@ function rtz_zona_publica( $r ) {
 		'version_id'       => (int) $r['version_id'],
 		'marcas'           => '' === (string) $r['flags'] ? array() : explode( ',', (string) $r['flags'] ),
 	);
+}
+
+/**
+ * Barrios que integran una zona, para vecinos, administración e informes:
+ *   osm  nombres de barrios y parajes de OpenStreetMap dentro de la zona (los trae el generador)
+ *   rt   barrios del catálogo de Ubicaciones RT del mismo municipio que coinciden por nombre, más los que otros
+ *        plugins aportan (RT Reportes: barrios de reclamos ubicados en la zona) con el filtro rtz_barrios_de_zona
+ */
+function rtz_barrios_de_zona( $id ) {
+	$z = rtz_zona( $id );
+	if ( ! $z ) {
+		return array( 'osm' => array(), 'rt' => array() );
+	}
+	$fold = function( $s ) { return strtolower( trim( remove_accents( (string) $s ) ) ); };
+	$names = array_flip( array_map( $fold, $z['barrios'] ) );
+	$rt = array();
+	if ( $z['localidad_id'] && class_exists( 'RTTerritorios_Catalogo' ) ) {
+		foreach ( RTTerritorios_Catalogo::listar_barrios( (int) $z['localidad_id'], 'activa' ) as $b ) {
+			$f = $fold( $b['nombre'] );
+			$f2 = preg_replace( '/^(barrio|b\\.|b°|bº|villa)\s+/u', '', $f );
+			if ( isset( $names[ $f ] ) || isset( $names[ $f2 ] ) ) {
+				$rt[ (int) $b['id'] ] = array( 'id' => (int) $b['id'], 'nombre' => $b['nombre'], 'origen' => 'nombre_osm' );
+			}
+		}
+	}
+	$rt = (array) apply_filters( 'rtz_barrios_de_zona', $rt, $z );
+	return array( 'osm' => $z['barrios'], 'rt' => array_values( $rt ) );
+}
+
+/** Texto corto para mostrar: «San Cayetano, Villa Mariano Moreno y 3 más». */
+function rtz_barrios_texto( $id, $max = 4 ) {
+	$b = rtz_barrios_de_zona( $id );
+	$list = array_values( array_unique( array_merge( $b['osm'], array_column( $b['rt'], 'nombre' ) ) ) );
+	if ( ! $list ) {
+		return '';
+	}
+	$rest = count( $list ) - $max;
+	return implode( ', ', array_slice( $list, 0, $max ) ) . ( $rest > 0 ? ' y ' . $rest . ' más' : '' );
 }

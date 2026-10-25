@@ -148,6 +148,16 @@ class TestPipeline(unittest.TestCase):
         self.assertTrue(any("Barrio Norte" in n or "San Cayetano" in n for n in nombres))
         self.assertFalse(any("Kiosco" in n for n in nombres))
 
+    def test_barrios_de_cada_zona(self):
+        z = self.zonas("900001")
+        todos = [b for x in z for b in x.get("barrios", [])]
+        self.assertIn("San Cayetano", todos)
+        self.assertIn("Barrio Norte", todos)
+        self.assertNotIn("Kiosco", todos)
+        for x in z:  # cada barrio que da nombre a la zona figura en su lista
+            if x["lugar"]:
+                self.assertIn(x["lugar"], x["barrios"])
+
     def test_geometria_disuelta(self):
         z = self.zonas("900001")
         disueltas = sum(1 for x in z if x["calidad"]["disuelta"])

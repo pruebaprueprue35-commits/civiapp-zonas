@@ -64,3 +64,22 @@ def _mejor_lugar(z) -> str:
         return ""
     lugares = sorted(lugares, key=lambda t: (t[0], t[1], t[2]))
     return lugares[0][2]
+
+
+def barrios(lugares: list, maximo: int = 40) -> list:
+    """Barrios y parajes de OpenStreetMap que caen dentro de la zona, sin repetir.
+
+    Orden estable: primero los barrios (suburb, quarter, neighbourhood), luego parajes y localidades; dentro de cada
+    tipo, del más cercano al centro de la zona al más lejano. Sirve para que vecinos y municipio sepan qué cubre la zona.
+    """
+    vistos = set()
+    out = []
+    for pri, dist, name in sorted(lugares or [], key=lambda t: (t[0] > 2, t[1], t[2])):
+        clave = name.strip().lower()
+        if not clave or clave in vistos:
+            continue
+        vistos.add(clave)
+        out.append(name.strip())
+        if len(out) >= maximo:
+            break
+    return out

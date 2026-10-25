@@ -60,3 +60,16 @@ pantalla dibuja las zonas sin mapa de fondo.
 
 tests/run-tests.php: 49 pruebas de integración en WordPress real (carga sola, vínculo con
 Core, ubicación de puntos, versión nueva remota, parte dañada, candado, ZIP malicioso).
+
+== Changelog ==
+
+= 1.1.0 =
+* Cada zona dice qué barrios la integran (lugares de OpenStreetMap dentro del polígono y barrios del
+  catálogo RT por nombre o por reclamos ubicados): `rtz_barrios_de_zona( $id )`, `rtz_barrios_texto( $id )`
+  y columna «Barrios que la integran» en Revisar zonas.
+* Municipios marcados como municipio o departamento (provincias sin municipios en GeoRef).
+* Lee paquetes 1.0 (sin esos campos) sin errores.
+* Proveedor de datos para Descargas CiviApp: zonas con polígono, barrios y versión.
+
+= 1.0.1 =
+* Primera versión pública.

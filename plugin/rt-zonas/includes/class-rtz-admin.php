@@ -303,9 +303,9 @@ final class RTZ_Admin {
 			echo '<div id="rtz-mapa" data-municipio="' . esc_attr( $muni ) . '"></div>';
 			echo '<p class="description">Mapa © colaboradores de OpenStreetMap. Las zonas en naranja tienen algo para revisar.</p>';
 			$zonas = rtz_zonas_de_municipio( $muni, 'georef' );
-			echo '<div class="rtz-table-wrap"><table class="widefat striped"><thead><tr><th>Código</th><th>Nombre</th><th>Población</th><th>Para revisar</th><th>Renombrar</th></tr></thead><tbody>';
+			echo '<div class="rtz-table-wrap"><table class="widefat striped"><thead><tr><th>Código</th><th>Nombre</th><th>Barrios que la integran</th><th>Población</th><th>Para revisar</th><th>Renombrar</th></tr></thead><tbody>';
 			foreach ( $zonas as $z ) {
-				echo '<tr><td>' . esc_html( $z['codigo'] ) . '</td><td>' . esc_html( $z['nombre'] ) . '</td><td>' . esc_html( null === $z['poblacion'] ? '—' : number_format_i18n( $z['poblacion'] ) ) . '</td><td>' . esc_html( implode( ', ', array_map( array( __CLASS__, 'flag_text' ), $z['marcas'] ) ) ) . '</td><td>';
+				echo '<tr><td>' . esc_html( $z['codigo'] ) . '</td><td>' . esc_html( $z['nombre'] ) . '</td><td>' . esc_html( rtz_barrios_texto( $z['id'], 12 ) ?: '—' ) . '</td><td>' . esc_html( null === $z['poblacion'] ? '—' : number_format_i18n( $z['poblacion'] ) ) . '</td><td>' . esc_html( implode( ', ', array_map( array( __CLASS__, 'flag_text' ), $z['marcas'] ) ) ) . '</td><td>';
 				echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="rtz-rename">';
 				wp_nonce_field( 'rtz_renombrar' );
 				echo '<input type="hidden" name="action" value="rtz_renombrar"><input type="hidden" name="uid" value="' . esc_attr( $z['uid'] ) . '"><input type="hidden" name="municipio" value="' . esc_attr( $muni ) . '">';

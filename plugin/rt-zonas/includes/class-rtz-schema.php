@@ -8,7 +8,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * para que los reclamos ya ubicados conserven la zona que tenían.
  */
 final class RTZ_Schema {
-	const DB_VERSION = '1.0.0';
+	const DB_VERSION = '1.1.0';
 
 	public static function tables() {
 		global $wpdb;
@@ -51,6 +51,7 @@ final class RTZ_Schema {
  localidad_id bigint unsigned NOT NULL DEFAULT 0,
  provincia_georef varchar(4) NOT NULL DEFAULT '',
  nombre varchar(160) NOT NULL DEFAULT '',
+ tipo_unidad varchar(16) NOT NULL DEFAULT 'municipio',
  poblacion bigint DEFAULT NULL,
  radios int unsigned NOT NULL DEFAULT 0,
  zonas int unsigned NOT NULL DEFAULT 0,
@@ -79,6 +80,7 @@ final class RTZ_Schema {
  nombre varchar(160) NOT NULL DEFAULT '',
  direccion varchar(20) NOT NULL DEFAULT '',
  lugar varchar(80) NOT NULL DEFAULT '',
+ barrios text,
  poblacion bigint DEFAULT NULL,
  radios_count int unsigned NOT NULL DEFAULT 0,
  area_km2 decimal(12,3) NOT NULL DEFAULT 0,

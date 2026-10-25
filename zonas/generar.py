@@ -30,7 +30,7 @@ CLAVES_RADIO = {
 
 
 class Municipio:
-    __slots__ = ("id", "nombre", "provincia_id", "provincia_nombre", "polys", "bbox", "area")
+    __slots__ = ("id", "nombre", "provincia_id", "provincia_nombre", "tipo_unidad", "polys", "bbox", "area")
 
     def __init__(self, f):
         p = f.get("properties") or {}
@@ -38,6 +38,7 @@ class Municipio:
         self.nombre = str(pick(p, CLAVES_MUNICIPIO["nombre"]) or "").strip()
         self.provincia_id = str(pick(p, CLAVES_MUNICIPIO["provincia_id"]) or self.id[:2]).strip().zfill(2)
         self.provincia_nombre = str(pick(p, CLAVES_MUNICIPIO["provincia_nombre"]) or "").strip()
+        self.tipo_unidad = str(p.get("tipo_unidad") or "municipio").strip() or "municipio"
         self.polys = geo.polygons_of(f.get("geometry") or {})
         self.bbox = geo.bbox(self.polys)
         self.area = geo.total_area_deg(self.polys)
@@ -175,10 +176,13 @@ def zonas_de_municipio(m: Municipio, radios: list, barreras: list, lugares: list
         # Sin radios censales: el municipio entero es una zona, sin población conocida.
         c = geo.centroid(m.polys)
         proj = geo.LocalProjection(*c)
+        cx, cy = proj.fwd(*c)
+        lz = [(pri, math.hypot(proj.fwd(x, y)[0] - cx, proj.fwd(x, y)[1] - cy), name) for (x, y, name, pri) in lugares
+              if m.bbox[0] <= x <= m.bbox[2] and m.bbox[1] <= y <= m.bbox[3] and geo.point_in_polys(x, y, m.polys)]
         zona = {
             "tipo": "zona", "uid": _uid(m.id, ["municipio"]), "municipio_georef": m.id,
             "provincia_georef": m.provincia_id, "codigo": "Z01", "nombre": "Zona única",
-            "direccion": "Municipio", "lugar": "", "poblacion": None, "radios": [], "radios_count": 0,
+            "direccion": "Municipio", "lugar": "", "barrios": nombres.barrios(lz), "poblacion": None, "radios": [], "radios_count": 0,
             "area_km2": round(geo.area_m2(m.polys, proj) / 1e6, 3),
             "centroide": [round(c[0], 6), round(c[1], 6)],
             "bbox": [round(v, 6) for v in m.bbox],
@@ -253,7 +257,7 @@ def zonas_de_municipio(m: Municipio, radios: list, barreras: list, lugares: list
             "barrera_cruzada_m": round(cruces, 1),
             "calidad": {"compacidad": compac, "contigua": contigua, "disuelta": disuelta_ok},
             "flags": flags, "geometry": geo.to_geojson(polys),
-            "xy": (cx, cy), "lugares": lugares_z,
+            "xy": (cx, cy), "lugares": lugares_z, "barrios": nombres.barrios(lugares_z),
         })
     nombres.nombrar(zonas)
     for z in zonas:
@@ -264,7 +268,7 @@ def zonas_de_municipio(m: Municipio, radios: list, barreras: list, lugares: list
     ordered = []
     for z in zonas:
         ordered.append({k: z[k] for k in (
-            "tipo", "uid", "municipio_georef", "provincia_georef", "codigo", "nombre", "direccion", "lugar",
+            "tipo", "uid", "municipio_georef", "provincia_georef", "codigo", "nombre", "direccion", "lugar", "barrios",
             "poblacion", "radios_count", "area_km2", "centroide", "bbox", "calidad", "flags",
             "barrera_cruzada_m", "radios", "geometry") if k in z})
     if any(z["flags"] for z in ordered):
@@ -274,7 +278,7 @@ def zonas_de_municipio(m: Municipio, radios: list, barreras: list, lugares: list
 
 def _muni_record(m, zonas, n_radios, pob, flags):
     return {
-        "tipo": "municipio", "municipio_georef": m.id, "nombre": m.nombre,
+        "tipo": "municipio", "municipio_georef": m.id, "nombre": m.nombre, "tipo_unidad": m.tipo_unidad,
         "provincia_georef": m.provincia_id, "provincia_nombre": m.provincia_nombre,
         "poblacion": pob, "radios_count": n_radios, "zonas_count": len(zonas),
         "zonas_para_revisar": sum(1 for z in zonas if z["flags"]),

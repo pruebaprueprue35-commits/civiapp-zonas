@@ -271,6 +271,7 @@ final class RTZ_Importer {
 					'localidad_id'     => RTZ_Core_Link::localidad_for( $mg, (string) ( $r['provincia_georef'] ?? '' ), (string) ( $r['nombre'] ?? '' ) ),
 					'provincia_georef' => self::clean_id( $r['provincia_georef'] ?? $part['provincia'] ),
 					'nombre'           => sanitize_text_field( (string) ( $r['nombre'] ?? '' ) ),
+					'tipo_unidad'      => ( isset( $r['tipo_unidad'] ) && 'departamento' === $r['tipo_unidad'] ) ? 'departamento' : 'municipio', // paquetes 1.0 no traen el campo
 					'poblacion'        => isset( $r['poblacion'] ) && null !== $r['poblacion'] ? (int) $r['poblacion'] : null,
 					'radios'           => (int) ( $r['radios_count'] ?? 0 ),
 					'zonas'            => (int) ( $r['zonas_count'] ?? 0 ),
@@ -327,6 +328,7 @@ final class RTZ_Importer {
 				'nombre'           => substr( sanitize_text_field( $nombre ), 0, 160 ),
 				'direccion'        => substr( sanitize_text_field( (string) ( $r['direccion'] ?? '' ) ), 0, 20 ),
 				'lugar'            => substr( sanitize_text_field( (string) ( $r['lugar'] ?? '' ) ), 0, 80 ),
+				'barrios'          => wp_json_encode( array_values( array_slice( array_filter( array_map( function( $b ) { return is_string( $b ) ? substr( sanitize_text_field( $b ), 0, 60 ) : ''; }, (array) ( $r['barrios'] ?? array() ) ) ), 0, 40 ) ) ),
 				'poblacion'        => isset( $r['poblacion'] ) && null !== $r['poblacion'] ? (int) $r['poblacion'] : null,
 				'radios_count'     => (int) ( $r['radios_count'] ?? 0 ),
 				'area_km2'         => (float) ( $r['area_km2'] ?? 0 ),

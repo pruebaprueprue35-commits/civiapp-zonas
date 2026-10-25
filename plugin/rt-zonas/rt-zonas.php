@@ -2,7 +2,7 @@
 /**
  * Plugin Name: CiviApp Zonas
  * Description: Zonas de todos los municipios de Argentina, generadas desde radios censales 2022. Se descargan y cargan solas, se actualizan por versión y ubican cada punto (reclamo) en su zona y sector.
- * Version: 1.0.1
+ * Version: 1.1.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Author: CiviApp
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'RTZ_VERSION', '1.0.1' );
+define( 'RTZ_VERSION', '1.1.0' );
 define( 'RTZ_FILE', __FILE__ );
 define( 'RTZ_DIR', plugin_dir_path( __FILE__ ) );
 define( 'RTZ_URL', plugin_dir_url( __FILE__ ) );
@@ -33,6 +33,7 @@ require_once RTZ_DIR . 'includes/class-rtz-importer.php';
 require_once RTZ_DIR . 'includes/class-rtz-core-link.php';
 require_once RTZ_DIR . 'includes/api.php';
 require_once RTZ_DIR . 'includes/class-rtz-rest.php';
+require_once RTZ_DIR . 'includes/class-rtz-paquete.php';
 
 if ( is_admin() ) {
 	require_once RTZ_DIR . 'includes/class-rtz-admin.php';
@@ -41,6 +42,7 @@ if ( is_admin() ) {
 
 RTZ_Importer::init();
 RTZ_Rest::init();
+RTZ_Paquete::init();
 
 register_activation_hook( __FILE__, array( 'RTZ_Importer', 'on_activate' ) );
 register_deactivation_hook( __FILE__, array( 'RTZ_Importer', 'on_deactivate' ) );

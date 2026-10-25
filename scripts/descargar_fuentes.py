@@ -29,6 +29,10 @@ def log(msg):
     print(msg, flush=True)
 
 
+# Códigos INDEC de las 24 jurisdicciones.
+PROVINCIAS_INDEC = ("02", "06", "10", "14", "18", "22", "26", "30", "34", "38", "42", "46", "50", "54", "58", "62", "66", "70", "74", "78", "82", "86", "90", "94")
+
+
 def descargar(urls, destino, minimo_bytes=1000):
     """Prueba cada URL en orden; devuelve (url_usada, sha256, bytes)."""
     errores = []
@@ -56,33 +60,42 @@ def descargar(urls, destino, minimo_bytes=1000):
     raise SystemExit("No se pudo descargar ninguna URL:\n" + "\n".join(errores))
 
 
-def normalizar_municipios(path, destino):
-    """Deja un NDJSON con id, nombre, provincia y geometría. Acepta NDJSON de GeoRef o GeoJSON."""
+def normalizar_municipios(path, destino, tipo="municipio", solo_provincias=None, agregar=False, minimo=500):
+    """Deja un NDJSON con id, nombre, provincia y geometría. Acepta NDJSON de GeoRef o GeoJSON.
+
+    tipo="departamento" + solo_provincias: agrega departamentos como unidad de respaldo en las provincias que no tienen
+    municipios en GeoRef (así ninguna provincia queda sin zonas)."""
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
     from zonas.entrada import iter_features, pick
     from zonas.generar import CLAVES_MUNICIPIO
     n = 0
     sin_geom = 0
-    with open(destino, "w", encoding="utf-8") as out:
+    provincias = {}
+    with open(destino, "a" if agregar else "w", encoding="utf-8") as out:
         for f in iter_features(path):
             p = f.get("properties") or {}
             g = f.get("geometry")
             if not g or g.get("type") not in ("Polygon", "MultiPolygon"):
                 sin_geom += 1
                 continue
+            prov = str(pick(p, CLAVES_MUNICIPIO["provincia_id"]) or "").zfill(2)
+            if solo_provincias is not None and prov not in solo_provincias:
+                continue
             rec = {
                 "id": str(pick(p, CLAVES_MUNICIPIO["id"])),
                 "nombre": pick(p, CLAVES_MUNICIPIO["nombre"]),
-                "provincia_id": str(pick(p, CLAVES_MUNICIPIO["provincia_id"]) or "").zfill(2),
+                "provincia_id": prov,
                 "provincia_nombre": pick(p, CLAVES_MUNICIPIO["provincia_nombre"]),
+                "tipo_unidad": tipo,
                 "geometria": g,
             }
             out.write(json.dumps(rec, ensure_ascii=False) + "\n")
             n += 1
-    log(f"Municipios con polígono: {n} (sin geometría: {sin_geom})")
-    if n < 500:
-        raise SystemExit("La fuente de municipios no trae polígonos suficientes; revisar config/fuentes.json")
-    return n
+            provincias[prov] = provincias.get(prov, 0) + 1
+    log(f"{tipo.capitalize()}s con polígono: {n} (sin geometría: {sin_geom})")
+    if n < minimo:
+        raise SystemExit(f"La fuente de {tipo}s no trae polígonos suficientes; revisar config/fuentes.json")
+    return n, provincias
 
 
 def elegir_poblacion(df, clave, total_pais, tolerancia=0.03):
@@ -250,7 +263,22 @@ def main():
     url, sha, n = descargar(cfg["municipios"]["urls"], raw)
     fuentes.append({"id": "municipios", "nombre": cfg["municipios"]["nombre"], "licencia": cfg["municipios"]["licencia"],
                     "url": url, "sha256": sha, "bytes": n})
-    nm = normalizar_municipios(raw, os.path.join(a.salida, "municipios.ndjson"))
+    nm, provs_muni = normalizar_municipios(raw, os.path.join(a.salida, "municipios.ndjson"))
+    # Provincias sin municipios en GeoRef: se usan sus departamentos como unidad (marcados tipo_unidad=departamento).
+    faltan = sorted(set(PROVINCIAS_INDEC) - set(provs_muni))
+    deptos = {"provincias": faltan, "unidades": 0}
+    if faltan and cfg.get("departamentos"):
+        log(f"Provincias sin municipios en GeoRef: {', '.join(faltan)} → se agregan sus departamentos")
+        try:
+            raw_d = os.path.join(tmp, "departamentos_raw")
+            url_d, sha_d, n_d = descargar(cfg["departamentos"]["urls"], raw_d)
+            fuentes.append({"id": "departamentos", "nombre": cfg["departamentos"]["nombre"], "licencia": cfg["departamentos"]["licencia"], "url": url_d, "sha256": sha_d, "bytes": n_d})
+            nd, _ = normalizar_municipios(raw_d, os.path.join(a.salida, "municipios.ndjson"), tipo="departamento", solo_provincias=set(faltan), agregar=True, minimo=1)
+            deptos["unidades"] = nd
+            nm += nd
+        except SystemExit as e:  # sin respaldo no se frena la generación del resto del país
+            log(f"  AVISO: no se pudieron agregar departamentos: {e}")
+            deptos["error"] = str(e)
     f_radios, resumen_radios = normalizar_radios(cfg, tmp, a.salida, a.diagnostico)
     for f in f_radios:
         f.update(nombre=cfg["radios"]["nombre"], licencia=cfg["radios"]["licencia"])
@@ -265,7 +293,7 @@ def main():
     with open(os.path.join(a.salida, "fuentes.json"), "w", encoding="utf-8") as fh:
         json.dump(fuentes, fh, ensure_ascii=False, indent=1)
     with open(os.path.join(a.salida, "resumen_fuentes.json"), "w", encoding="utf-8") as fh:
-        json.dump({"municipios": nm, "radios": resumen_radios}, fh, ensure_ascii=False, indent=1)
+        json.dump({"municipios": nm, "departamentos_respaldo": deptos, "radios": resumen_radios}, fh, ensure_ascii=False, indent=1)
     shutil.rmtree(tmp, ignore_errors=True)
     log("Fuentes listas.")
 

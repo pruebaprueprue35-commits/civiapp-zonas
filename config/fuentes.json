@@ -54,5 +54,13 @@
     "url": "https://download.geofabrik.de/south-america/argentina-latest.osm.pbf",
     "barreras": "w/highway=motorway,trunk,primary w/railway=rail w/waterway=river,canal",
     "lugares": "n/place=suburb,quarter,neighbourhood,hamlet,village,locality"
+  },
+  "departamentos": {
+    "nombre": "GeoRef (datos.gob.ar): departamentos, solo para provincias sin municipios en GeoRef (Santa Cruz, Santiago del Estero)",
+    "licencia": "Datos abiertos del Estado nacional (CC BY 4.0)",
+    "urls": [
+      "https://apis.datos.gob.ar/georef/api/departamentos.ndjson",
+      "https://infra.datos.gob.ar/georef/departamentos.ndjson"
+    ]
   }
 }

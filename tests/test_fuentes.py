@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 import unittest
@@ -56,7 +57,8 @@ class TestMunicipios(unittest.TestCase):
                     fh.write(json.dumps(o) + "\n")
         out = os.path.join(t, "norm.ndjson")
         n = dfu.normalizar_municipios(big, out)
-        self.assertEqual(n, 520)
+        self.assertEqual(n[0], 520)
+        self.assertEqual(n[1], {'90': 390, '06': 130})
         o = json.loads(open(out).readline())
         self.assertEqual(o["provincia_id"], "90")
         self.assertIn("geometria", o)
@@ -64,3 +66,23 @@ class TestMunicipios(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestDepartamentos(unittest.TestCase):
+    def test_respaldo_por_departamentos(self):
+        import tempfile
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
+        import descargar_fuentes as d
+        tmp = tempfile.mkdtemp()
+        src = os.path.join(tmp, "deptos.ndjson")
+        sq = {"type": "Polygon", "coordinates": [[[-64, -28], [-63.9, -28], [-63.9, -27.9], [-64, -27.9], [-64, -28]]]}
+        with open(src, "w") as fh:
+            fh.write(json.dumps({"id": "86007", "nombre": "Banda", "provincia": {"id": "86", "nombre": "Santiago del Estero"}, "geometria": sq}) + "\n")
+            fh.write(json.dumps({"id": "90007", "nombre": "Capital", "provincia": {"id": "90", "nombre": "Tucumán"}, "geometria": sq}) + "\n")
+        dest = os.path.join(tmp, "m.ndjson")
+        open(dest, "w").write("")
+        n, provs = d.normalizar_municipios(src, dest, tipo="departamento", solo_provincias={"86"}, agregar=True, minimo=1)
+        self.assertEqual((n, provs), (1, {"86": 1}))
+        rec = json.loads(open(dest).read().strip())
+        self.assertEqual(rec["tipo_unidad"], "departamento")
+        self.assertEqual(len(d.PROVINCIAS_INDEC), 24)
