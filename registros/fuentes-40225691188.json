@@ -1,0 +1,110 @@
+{
+ "municipios": 2082,
+ "radios": {
+  "radios": 66502,
+  "con_poblacion": 66502,
+  "poblacion": {
+   "columna": "POB_TOT_P",
+   "variable": null,
+   "total": 45618784
+  },
+  "provincias": {
+   "94": {
+    "radios": 238,
+    "poblacion": 184958
+   },
+   "78": {
+    "radios": 464,
+    "poblacion": 335677
+   },
+   "26": {
+    "radios": 1028,
+    "poblacion": 589454
+   },
+   "62": {
+    "radios": 1216,
+    "poblacion": 747697
+   },
+   "06": {
+    "radios": 23901,
+    "poblacion": 17408906
+   },
+   "42": {
+    "radios": 904,
+    "poblacion": 359193
+   },
+   "58": {
+    "radios": 1075,
+    "poblacion": 708578
+   },
+   "50": {
+    "radios": 2379,
+    "poblacion": 2030773
+   },
+   "70": {
+    "radios": 888,
+    "poblacion": 819445
+   },
+   "66": {
+    "radios": 1830,
+    "poblacion": 1434225
+   },
+   "10": {
+    "radios": 693,
+    "poblacion": 427625
+   },
+   "46": {
+    "radios": 497,
+    "poblacion": 382453
+   },
+   "86": {
+    "radios": 1093,
+    "poblacion": 1057749
+   },
+   "90": {
+    "radios": 2320,
+    "poblacion": 1727337
+   },
+   "38": {
+    "radios": 1019,
+    "poblacion": 809364
+   },
+   "34": {
+    "radios": 981,
+    "poblacion": 605507
+   },
+   "22": {
+    "radios": 1947,
+    "poblacion": 1124603
+   },
+   "14": {
+    "radios": 6720,
+    "poblacion": 3812064
+   },
+   "82": {
+    "radios": 5385,
+    "poblacion": 3519059
+   },
+   "74": {
+    "radios": 894,
+    "poblacion": 540548
+   },
+   "02": {
+    "radios": 3820,
+    "poblacion": 3095454
+   },
+   "30": {
+    "radios": 3213,
+    "poblacion": 1415097
+   },
+   "18": {
+    "radios": 1985,
+    "poblacion": 1209671
+   },
+   "54": {
+    "radios": 2012,
+    "poblacion": 1273347
+   }
+  }
+ }
+}
