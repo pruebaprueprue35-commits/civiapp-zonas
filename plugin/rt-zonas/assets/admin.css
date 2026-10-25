@@ -1,0 +1,17 @@
+.rtz .rtz-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin: 16px 0; }
+.rtz .rtz-card { background: #fff; border: 1px solid #dcdcde; border-radius: 8px; padding: 16px; margin: 16px 0; }
+.rtz .rtz-cards .rtz-card { margin: 0; }
+.rtz .rtz-card h2 { margin-top: 0; font-size: 15px; }
+.rtz .rtz-big { font-size: 22px; font-weight: 600; margin: 4px 0; }
+.rtz .rtz-bar { height: 12px; background: #f0f0f1; border-radius: 6px; overflow: hidden; margin: 8px 0; }
+.rtz .rtz-bar span { display: block; height: 100%; background: #2271b1; transition: width .4s; }
+.rtz .rtz-prog-error { color: #b32d2e; min-height: 1em; }
+.rtz .rtz-inline { display: inline-block; margin: 4px 8px 4px 0; }
+.rtz .button { min-height: 40px; line-height: 38px; }
+.rtz .rtz-table-wrap { overflow-x: auto; }
+.rtz .rtz-filter { margin: 16px 0; display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+.rtz .rtz-filter input, .rtz .rtz-filter select { min-height: 40px; }
+.rtz #rtz-mapa { height: 60vh; min-height: 360px; border-radius: 8px; border: 1px solid #dcdcde; margin: 12px 0; }
+.rtz .rtz-rename { display: flex; gap: 6px; flex-wrap: wrap; }
+.rtz .rtz-rename input[type=text] { min-width: 220px; min-height: 40px; }
+@media (max-width: 782px) { .rtz .rtz-rename input[type=text] { min-width: 0; width: 100%; } }

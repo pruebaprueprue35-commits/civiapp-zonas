@@ -1,0 +1,100 @@
+name: Generar zonas
+
+# Genera las zonas de todas las provincias (o las elegidas) y las publica como versión (release).
+# El plugin "CiviApp Zonas" de WordPress descarga la última versión publicada y la carga sola.
+on:
+  workflow_dispatch:
+    inputs:
+      provincias:
+        description: "Provincias (códigos GeoRef separados por coma) o 'todas'"
+        default: "todas"
+        required: true
+      osm:
+        description: "Usar OpenStreetMap para avenidas, vías, ríos y nombres de barrio"
+        type: boolean
+        default: true
+      publicar:
+        description: "Publicar como nueva versión para WordPress"
+        type: boolean
+        default: true
+  schedule:
+    # Cada 3 meses, el día 1 a las 06:00 UTC, para tomar cambios de GeoRef/INDEC/OSM.
+    - cron: "0 6 1 */3 *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: generar-zonas
+  cancel-in-progress: false
+
+jobs:
+  generar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    env:
+      PROVINCIAS: ${{ github.event.inputs.provincias || 'todas' }}
+      USAR_OSM: ${{ github.event_name == 'schedule' || github.event.inputs.osm == 'true' }}
+      PUBLICAR: ${{ github.event_name == 'schedule' || github.event.inputs.publicar == 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar herramientas
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y osmium-tool
+          pip install -r requirements-descarga.txt
+
+      - name: Pruebas del generador
+        run: python -m unittest discover -s tests -v
+
+      - name: Versión
+        id: ver
+        run: |
+          V="$(date -u +%Y.%m.%d)-${GITHUB_RUN_NUMBER}"
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "ZONAS_FECHA_UTC=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
+
+      - name: Descargar fuentes públicas
+        run: |
+          ARGS=""
+          if [ "$USAR_OSM" != "true" ]; then ARGS="--sin-osm"; fi
+          python scripts/descargar_fuentes.py --config config/fuentes.json --salida datos --diagnostico $ARGS
+
+      - name: Generar zonas
+        run: |
+          EXTRA=""
+          [ -f datos/barreras.geojsonl ] && EXTRA="$EXTRA --barreras datos/barreras.geojsonl"
+          [ -f datos/lugares.geojsonl ] && EXTRA="$EXTRA --lugares datos/lugares.geojsonl"
+          python -m zonas generar \
+            --municipios datos/municipios.ndjson \
+            --radios datos/radios \
+            --salida dist \
+            --version "${{ steps.ver.outputs.version }}" \
+            --provincias "$PROVINCIAS" \
+            --fuentes datos/fuentes.json \
+            --base-url "https://github.com/${GITHUB_REPOSITORY}/releases/download/zonas-${{ steps.ver.outputs.version }}/" \
+            --zip $EXTRA
+          python -m zonas verificar dist
+          cp datos/resumen_fuentes.json dist/
+
+      - name: Guardar resultado (artefacto)
+        uses: actions/upload-artifact@v4
+        with:
+          name: zonas-${{ steps.ver.outputs.version }}
+          path: dist/
+          retention-days: 30
+
+      - name: Publicar versión
+        if: env.PUBLICAR == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="zonas-${{ steps.ver.outputs.version }}"
+          gh release create "$TAG" dist/manifest.json dist/cobertura.csv dist/resumen_fuentes.json \
+            dist/prov-*.ndjson.gz dist/civiapp-zonas-*.zip \
+            --title "Zonas ${{ steps.ver.outputs.version }}" --notes-file dist/RESUMEN.md --latest

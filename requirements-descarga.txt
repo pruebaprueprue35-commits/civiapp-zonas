@@ -1,0 +1,5 @@
+# Solo para descargar y normalizar fuentes en GitHub Actions. El generador no tiene dependencias.
+geopandas>=1.0,<2
+pyarrow>=16
+shapely>=2.0,<3
+pandas>=2.2

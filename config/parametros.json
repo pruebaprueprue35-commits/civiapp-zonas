@@ -1,0 +1,13 @@
+{
+  "poblacion_zona_unica": 8000,
+  "poblacion_objetivo": 9000,
+  "poblacion_min": 6000,
+  "factor_max": 1.5,
+  "max_zonas": 40,
+  "penalidad_barrera": 6.0,
+  "penalidad_esquina": 2.0,
+  "iteraciones": 4,
+  "radio_barrera_m": 25.0,
+  "ajuste_m": 2.0,
+  "compacidad_min": 0.12
+}
