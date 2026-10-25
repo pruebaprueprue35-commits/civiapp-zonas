@@ -1,10 +1,10 @@
 {
   "municipios": {
-    "nombre": "GeoRef (datos.gob.ar): municipios con geometría oficial",
+    "nombre": "GeoRef (datos.gob.ar): municipios con geometría oficial IGN (2.082 municipios)",
     "licencia": "Datos abiertos del Estado nacional (CC BY 4.0)",
     "urls": [
-      "https://apis.datos.gob.ar/georef/api/v2.0/municipios.ndjson",
-      "https://apis.datos.gob.ar/georef/api/v2.0/municipios.geojson"
+      "https://apis.datos.gob.ar/georef/api/municipios.ndjson",
+      "https://infra.datos.gob.ar/georef/municipios.ndjson"
     ]
   },
   "radios": {
@@ -14,16 +14,39 @@
       "urls": [
         "https://data.source.coop/nlebovits/censo-argentino/2022/radios.parquet"
       ],
-      "clave": ["cod_2022", "link", "cod_radio", "codigo", "id_geo"]
+      "clave": [
+        "COD_2022",
+        "cod_2022",
+        "link",
+        "cod_radio",
+        "codigo",
+        "id_geo"
+      ],
+      "poblacion": [
+        "POB_TOT_P",
+        "poblacion",
+        "personas",
+        "pob_total",
+        "total_pob"
+      ],
+      "viviendas": [
+        "VIV_TOT_P"
+      ]
     },
     "poblacion": {
       "urls": [
         "https://data.source.coop/nlebovits/censo-argentino/2022/census-data.parquet"
       ],
-      "clave": ["id_geo", "cod_2022", "link", "codigo"],
+      "clave": [
+        "id_geo",
+        "cod_2022",
+        "link",
+        "codigo"
+      ],
       "comentario": "Si la tabla es larga (variable/valor), se elige sola la variable cuyo total nacional coincide con la población del Censo 2022 (46.044.703 habitantes ± 3%)."
     },
-    "poblacion_total_pais": 46044703
+    "poblacion_total_pais": 46044703,
+    "comentario": "radios.parquet (GeoParquet, WKB en WGS84) ya trae la población por radio en POB_TOT_P; census-data.parquet queda como respaldo."
   },
   "osm": {
     "nombre": "OpenStreetMap vía Geofabrik (avenidas, vías, ríos y nombres de barrios)",

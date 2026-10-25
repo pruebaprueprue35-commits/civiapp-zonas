@@ -7,7 +7,7 @@ Corre en GitHub Actions (que tiene internet). Deja en `datos/`:
   lugares.geojsonl             nombres de barrios y parajes (OSM)
   fuentes.json                 qué se descargó, de dónde, cuándo y con qué hash
 
-Requiere: geopandas, pyarrow, shapely (pip) y osmium-tool (apt) para OSM.
+Requiere: pyarrow, shapely, pandas (pip) y osmium-tool (apt) para OSM.
 Uso: python scripts/descargar_fuentes.py --config config/fuentes.json --salida datos [--sin-osm] [--diagnostico]
 """
 from __future__ import annotations
@@ -121,65 +121,101 @@ def elegir_poblacion(df, clave, total_pais, tolerancia=0.03):
                                             "total": int(serie.sum())}
 
 
-def normalizar_radios(cfg, tmp, salida, diagnostico=False):
-    import geopandas as gpd
-    import pandas as pd
+def _leer_geoparquet(path, clave_cands, pob_cands, diagnostico):
+    """Lee GeoParquet con pyarrow + shapely (sin depender de la versión de metadatos que acepte geopandas)."""
+    import pyarrow.parquet as pq
+    import shapely
+    pf = pq.ParquetFile(path)
+    cols = pf.schema_arrow.names
+    if diagnostico:
+        log(f"Columnas de radios: {cols}")
+    clave = next((c for c in clave_cands if c in cols), None)
+    pobc = next((c for c in pob_cands if c in cols), None)
+    geomc = "geometry" if "geometry" in cols else next((c for c in cols if c.lower() in ("geom", "wkb_geometry")), None)
+    if not clave or not geomc:
+        raise SystemExit(f"No encontré código de radio o geometría en {cols}")
+    meta = (pf.schema_arrow.metadata or {}).get(b"geo")
+    if meta:
+        geo = json.loads(meta)
+        crs = (geo.get("columns", {}).get(geomc, {}) or {}).get("crs")
+        if crs not in (None, "OGC:CRS84") and "4326" not in json.dumps(crs):
+            log(f"Aviso: CRS declarado {str(crs)[:200]}; se verifica por rango de coordenadas.")
+    out = []
+    for rg in range(pf.num_row_groups):
+        t = pf.read_row_group(rg, columns=[c for c in (clave, pobc, geomc) if c])
+        codes = t.column(clave).to_pylist()
+        pops = t.column(pobc).to_pylist() if pobc else [None] * len(codes)
+        geoms = shapely.from_wkb(t.column(geomc).to_pylist())
+        for cod, pob, g in zip(codes, pops, geoms):
+            out.append((str(cod).strip(), pob, g))
+    return out, pobc
 
+
+def normalizar_radios(cfg, tmp, salida, diagnostico=False):
+    import shapely
     rcfg = cfg["radios"]
     fuentes = []
     gpath = os.path.join(tmp, "radios_geom" + os.path.splitext(rcfg["geometria"]["urls"][0])[1])
     url, sha, n = descargar(rcfg["geometria"]["urls"], gpath)
     fuentes.append({"id": "radios_geometria", "url": url, "sha256": sha, "bytes": n})
-    gdf = gpd.read_parquet(gpath) if gpath.endswith(".parquet") else gpd.read_file(gpath)
-    if gdf.crs is not None and gdf.crs.to_epsg() != 4326:
-        gdf = gdf.to_crs(4326)
-    gclave = next((c for c in rcfg["geometria"]["clave"] if c in gdf.columns), None)
-    if diagnostico or not gclave:
-        log(f"Columnas de radios: {list(gdf.columns)}\n{gdf.head(3)}")
-    if not gclave:
-        raise SystemExit("No encontré la columna de código de radio en la geometría.")
-    gdf[gclave] = gdf[gclave].astype(str).str.strip()
-
-    pob = None
-    meta_pob = None
-    if any(c in gdf.columns for c in ("poblacion", "personas", "pob_total", "total_pob")):
-        col = next(c for c in ("poblacion", "personas", "pob_total", "total_pob") if c in gdf.columns)
-        pob = gdf.set_index(gclave)[col]
-        meta_pob = {"columna": col, "variable": None, "total": int(pob.sum())}
-    elif rcfg.get("poblacion", {}).get("urls"):
-        ppath = os.path.join(tmp, "radios_pob" + os.path.splitext(rcfg["poblacion"]["urls"][0])[1])
+    rows, pobc = _leer_geoparquet(gpath, rcfg["geometria"]["clave"], rcfg["geometria"].get("poblacion", []), diagnostico)
+    pob_map = None
+    meta_pob = {"columna": pobc, "variable": None}
+    if not pobc:
+        import pandas as pd
+        ppath = os.path.join(tmp, "radios_pob.parquet")
         url, sha, n = descargar(rcfg["poblacion"]["urls"], ppath)
         fuentes.append({"id": "radios_poblacion", "url": url, "sha256": sha, "bytes": n})
-        df = pd.read_parquet(ppath) if ppath.endswith(".parquet") else pd.read_csv(ppath)
+        df = pd.read_parquet(ppath)
         pclave = next((c for c in rcfg["poblacion"]["clave"] if c in df.columns), None)
-        if diagnostico or not pclave:
-            log(f"Columnas de población: {list(df.columns)}\n{df.head(5)}")
-            for c in df.columns:
-                if df[c].dtype == object and df[c].nunique() < 300:
-                    log(f"  valores de {c}: {sorted(map(str, df[c].unique()))[:60]}")
-        if not pclave:
-            raise SystemExit("No encontré la columna de código de radio en la tabla de población.")
         df[pclave] = df[pclave].astype(str).str.strip()
-        pob, meta_pob = elegir_poblacion(df, pclave, rcfg["poblacion_total_pais"])
-    else:
-        raise SystemExit("No hay fuente de población configurada.")
-
-    gdf["poblacion"] = gdf[gclave].map(pob).fillna(0).astype("int64")
-    cubiertos = int((gdf[gclave].isin(pob.index)).sum())
-    log(f"Radios: {len(gdf):,}; con población: {cubiertos:,}; población total: {int(gdf['poblacion'].sum()):,}")
+        serie, meta_pob = elegir_poblacion(df, pclave, rcfg["poblacion_total_pais"])
+        pob_map = serie.to_dict()
+    # Verificar coordenadas en grados (Argentina): si no, el archivo viene proyectado y no se puede usar así.
+    xs = []
+    for _, _, g in rows[:500]:
+        if g is not None and not g.is_empty:
+            b = g.bounds
+            xs.append(b[0])
+    if xs and not all(-80 <= x <= -20 for x in xs):
+        raise SystemExit("Las coordenadas de los radios no están en grados WGS84; revisar la fuente.")
     os.makedirs(os.path.join(salida, "radios"), exist_ok=True)
-    gdf["prov"] = gdf[gclave].str[:2]
-    por_prov = {}
-    for prov, sub in gdf.groupby("prov"):
-        path = os.path.join(salida, "radios", f"{prov}.geojsonl")
-        with open(path, "w", encoding="utf-8") as fh:
-            for cod, p, geom in zip(sub[gclave], sub["poblacion"], sub.geometry):
-                if geom is None or geom.is_empty:
-                    continue
-                fh.write(json.dumps({"type": "Feature", "properties": {"codigo": cod, "poblacion": int(p)},
-                                     "geometry": geom.__geo_interface__}) + "\n")
-        por_prov[prov] = {"radios": int(len(sub)), "poblacion": int(sub["poblacion"].sum())}
-    return fuentes, {"radios": int(len(gdf)), "con_poblacion": cubiertos, "poblacion": meta_pob, "provincias": por_prov}
+    handles = {}
+    resumen = {}
+    total = 0
+    con_pob = 0
+    try:
+        for cod, pob, g in rows:
+            if g is None or g.is_empty:
+                continue
+            if pob_map is not None:
+                pob = pob_map.get(cod)
+            if pob is not None:
+                con_pob += 1
+            p = int(pob or 0)
+            total += p
+            prov = cod[:2]
+            if prov not in handles:
+                handles[prov] = open(os.path.join(salida, "radios", f"{prov}.geojsonl"), "w", encoding="utf-8")
+                resumen[prov] = {"radios": 0, "poblacion": 0}
+            if not g.is_valid:
+                g = shapely.make_valid(g)
+                if g.geom_type == "GeometryCollection":
+                    polys = [x for x in g.geoms if x.geom_type in ("Polygon", "MultiPolygon")]
+                    g = shapely.union_all(polys) if polys else g
+            handles[prov].write(json.dumps({"type": "Feature", "properties": {"codigo": cod, "poblacion": p},
+                                            "geometry": shapely.geometry.mapping(g)}) + "\n")
+            resumen[prov]["radios"] += 1
+            resumen[prov]["poblacion"] += p
+    finally:
+        for h in handles.values():
+            h.close()
+    meta_pob["total"] = total
+    log(f"Radios: {len(rows):,}; con población: {con_pob:,}; población total: {total:,}")
+    tot_pais = cfg["radios"].get("poblacion_total_pais")
+    if tot_pais and not (0.9 * tot_pais <= total <= 1.1 * tot_pais):
+        log(f"AVISO: la población total ({total:,}) se aleja más de 10% del Censo 2022 ({tot_pais:,}).")
+    return fuentes, {"radios": len(rows), "con_poblacion": con_pob, "poblacion": meta_pob, "provincias": resumen}
 
 
 def osm(cfg, tmp, salida):
