@@ -60,13 +60,17 @@ jobs:
           echo "ZONAS_FECHA_UTC=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
 
       - name: Descargar fuentes públicas
+        shell: bash
         run: |
+          set -o pipefail
           ARGS=""
           if [ "$USAR_OSM" != "true" ]; then ARGS="--sin-osm"; fi
-          python scripts/descargar_fuentes.py --config config/fuentes.json --salida datos --diagnostico $ARGS
+          python scripts/descargar_fuentes.py --config config/fuentes.json --salida datos --diagnostico $ARGS 2>&1 | tee -a /tmp/registro.log
 
       - name: Generar zonas
+        shell: bash
         run: |
+          set -o pipefail
           EXTRA=""
           [ -f datos/barreras.geojsonl ] && EXTRA="$EXTRA --barreras datos/barreras.geojsonl"
           [ -f datos/lugares.geojsonl ] && EXTRA="$EXTRA --lugares datos/lugares.geojsonl"
@@ -78,8 +82,8 @@ jobs:
             --provincias "$PROVINCIAS" \
             --fuentes datos/fuentes.json \
             --base-url "https://github.com/${GITHUB_REPOSITORY}/releases/download/zonas-${{ steps.ver.outputs.version }}/" \
-            --zip $EXTRA
-          python -m zonas verificar dist
+            --zip $EXTRA 2>&1 | tee -a /tmp/registro.log
+          python -m zonas verificar dist 2>&1 | tee -a /tmp/registro.log
           cp datos/resumen_fuentes.json dist/
 
       - name: Guardar resultado (artefacto)
@@ -98,3 +102,24 @@ jobs:
           gh release create "$TAG" dist/manifest.json dist/cobertura.csv dist/resumen_fuentes.json \
             dist/prov-*.ndjson.gz dist/civiapp-zonas-*.zip \
             --title "Zonas ${{ steps.ver.outputs.version }}" --notes-file dist/RESUMEN.md --latest
+
+      - name: Guardar registro en la rama registros
+        if: always()
+        shell: bash
+        run: |
+          [ -f /tmp/registro.log ] || echo "sin registro" > /tmp/registro.log
+          [ -f dist/RESUMEN.md ] && cp dist/RESUMEN.md /tmp/RESUMEN.md || true
+          [ -f datos/resumen_fuentes.json ] && cp datos/resumen_fuentes.json /tmp/resumen_fuentes.json || true
+          git config user.name "civiapp-zonas[bot]"
+          git config user.email "civiapp-zonas@users.noreply.github.com"
+          git fetch origin registros || true
+          git switch registros 2>/dev/null || git switch --orphan registros
+          git rm -rq --cached . 2>/dev/null || true
+          find . -mindepth 1 -maxdepth 1 ! -name .git ! -name registros -exec rm -rf {} +
+          mkdir -p registros
+          tail -c 400000 /tmp/registro.log > "registros/generar-${GITHUB_RUN_ID}.log"
+          [ -f /tmp/RESUMEN.md ] && cp /tmp/RESUMEN.md "registros/resumen-${GITHUB_RUN_ID}.md" || true
+          [ -f /tmp/resumen_fuentes.json ] && cp /tmp/resumen_fuentes.json "registros/fuentes-${GITHUB_RUN_ID}.json" || true
+          git add registros
+          git commit -m "Registro de generación ${GITHUB_RUN_ID}"
+          git push origin registros
