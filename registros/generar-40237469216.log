@@ -1,0 +1,40 @@
+Descargando https://apis.datos.gob.ar/georef/api/municipios.ndjson
+  ok: 76,608,277 bytes
+Municipios con polígono: 2082 (sin geometría: 0)
+Provincias sin municipios en GeoRef: 78, 86 → se agregan sus departamentos
+Descargando https://apis.datos.gob.ar/georef/api/departamentos.ndjson
+  ok: 68,184,129 bytes
+Departamentos con polígono: 34 (sin geometría: 0)
+Descargando https://data.source.coop/nlebovits/censo-argentino/2022/radios.parquet
+  ok: 65,281,775 bytes
+Columnas de radios: ['COD_2022', 'PROV', 'DEPTO', 'FRACC', 'RADIO', 'OBS2022', 'VIV_TOT_P', 'POB_TOT_P', 'REDATAM', 'geometry', 'bbox']
+Radios: 66,502; con población: 66,502; población total: 45,618,784
+Descargando https://download.geofabrik.de/south-america/argentina-latest.osm.pbf
+  ok: 433,936,136 bytes
+Fuentes listas.
+[02] Ciudad Autónoma de Buenos Aires: 15 municipios, 293 zonas, 3820 radios, 0 radios fuera de municipios
+[06] Buenos Aires: 135 municipios, 1190 zonas, 23898 radios, 3 radios fuera de municipios
+[10] Catamarca: 36 municipios, 51 zonas, 691 radios, 2 radios fuera de municipios
+[14] Córdoba: 427 municipios, 535 zonas, 5932 radios, 788 radios fuera de municipios
+[18] Corrientes: 74 municipios, 130 zonas, 1982 radios, 3 radios fuera de municipios
+[22] Chaco: 68 municipios, 116 zonas, 1947 radios, 0 radios fuera de municipios
+[26] Chubut: 46 municipios, 77 zonas, 906 radios, 122 radios fuera de municipios
+[30] Entre Ríos: 269 municipios, 331 zonas, 2888 radios, 325 radios fuera de municipios
+[34] Formosa: 37 municipios, 60 zonas, 690 radios, 291 radios fuera de municipios
+[38] Jujuy: 63 municipios, 102 zonas, 1019 radios, 0 radios fuera de municipios
+[42] La Pampa: 80 municipios, 94 zonas, 904 radios, 0 radios fuera de municipios
+[46] La Rioja: 18 municipios, 35 zonas, 497 radios, 0 radios fuera de municipios
+[50] Mendoza: 18 municipios, 144 zonas, 2379 radios, 0 radios fuera de municipios
+[54] Misiones: 76 municipios, 135 zonas, 2012 radios, 0 radios fuera de municipios
+[58] Neuquén: 57 municipios, 89 zonas, 895 radios, 180 radios fuera de municipios
+[62] Río Negro: 39 municipios, 76 zonas, 1144 radios, 72 radios fuera de municipios
+[66] Salta: 60 municipios, 113 zonas, 1829 radios, 1 radios fuera de municipios
+[70] San Juan: 19 municipios, 67 zonas, 887 radios, 1 radios fuera de municipios
+[74] San Luis: 67 municipios, 96 zonas, 751 radios, 143 radios fuera de municipios
+[78] Santa Cruz: 7 municipios, 23 zonas, 464 radios, 0 radios fuera de municipios
+[82] Santa Fe: 363 municipios, 497 zonas, 5384 radios, 1 radios fuera de municipios
+[86] Santiago del Estero: 27 municipios, 77 zonas, 1093 radios, 0 radios fuera de municipios
+[90] Tucumán: 112 municipios, 190 zonas, 2306 radios, 14 radios fuera de municipios
+[94] Tierra del Fuego, Antártida e Islas del Atlántico Sur: 3 municipios, 15 zonas, 219 radios, 19 radios fuera de municipios
+Listo: 24 provincias, 2.116 municipios, 4.536 zonas (345 para revisar), población 45.265.868
+Paquete correcto
