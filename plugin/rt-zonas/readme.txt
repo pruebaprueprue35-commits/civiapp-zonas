@@ -63,6 +63,9 @@ Core, ubicación de puntos, versión nueva remota, parte dañada, candado, ZIP m
 
 == Changelog ==
 
+= 1.1.2 =
+* Comprobación de tablas sin distinguir mayúsculas (prefijo con mayúsculas en MySQL con lower_case_table_names=1).
+
 = 1.1.1 =
 * Activación de una versión: cada sentencia y el COMMIT se comprueban; si algo falla, la versión anterior sigue activa entera.
 * Desinstalar ya no borra nada (se quitó la opción «borrar al quitar»).

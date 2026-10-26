@@ -16,7 +16,7 @@ final class RTZ_Core_Link {
 		static $ok = null;
 		if ( null === $ok ) {
 			$table = $wpdb->prefix . 'rt_localidades';
-			$ok    = ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) === $table );
+			$ok    = ( rt_tabla_como( $table ) === $table );
 		}
 		return $ok;
 	}

@@ -127,7 +127,7 @@ final class RTZ_Schema {
 	public static function ready() {
 		global $wpdb;
 		foreach ( self::tables() as $table ) {
-			if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) !== $table ) {
+			if ( rt_tabla_como( $table ) !== $table ) {
 				return false;
 			}
 		}
