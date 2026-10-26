@@ -2,7 +2,7 @@
 /**
  * Plugin Name: CiviApp Zonas
  * Description: Zonas de todos los municipios de Argentina, generadas desde radios censales 2022. Se descargan y cargan solas, se actualizan por versión y ubican cada punto (reclamo) en su zona y sector.
- * Version: 1.1.0
+ * Version: 1.1.1
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Author: CiviApp
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'RTZ_VERSION', '1.1.0' );
+define( 'RTZ_VERSION', '1.1.1' );
 define( 'RTZ_FILE', __FILE__ );
 define( 'RTZ_DIR', plugin_dir_path( __FILE__ ) );
 define( 'RTZ_URL', plugin_dir_url( __FILE__ ) );

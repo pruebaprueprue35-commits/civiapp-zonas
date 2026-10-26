@@ -12,7 +12,6 @@ final class RTZ_Settings {
 			'auto_actualizar'   => 1,
 			'provincias'        => array(), // vacío = todas
 			'partes_por_tanda'  => 3,
-			'borrar_al_quitar'  => 0,
 		);
 	}
 
@@ -44,9 +43,6 @@ final class RTZ_Settings {
 		}
 		if ( isset( $in['partes_por_tanda'] ) ) {
 			$s['partes_por_tanda'] = max( 1, min( 20, absint( $in['partes_por_tanda'] ) ) );
-		}
-		if ( isset( $in['borrar_al_quitar'] ) ) {
-			$s['borrar_al_quitar'] = $in['borrar_al_quitar'] ? 1 : 0;
 		}
 		update_option( self::OPTION, $s, false );
 		return $s;

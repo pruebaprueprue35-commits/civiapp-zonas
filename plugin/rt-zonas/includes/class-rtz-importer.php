@@ -255,9 +255,12 @@ final class RTZ_Importer {
 		$now     = current_time( 'mysql', true );
 		$current = null;
 		$renames = self::renames();
-		$wpdb->query( 'START TRANSACTION' );
+		if ( false === $wpdb->query( 'START TRANSACTION' ) ) {
+			return new WP_Error( 'rtz_db', 'No se pudo iniciar la transacción de importación.' );
+		}
 		$skip    = array();
-		$res = RTZ_Package::each_record( $path, function ( $r ) use ( $wpdb, $t, $vid, $now, &$munis, &$zonas, &$current, &$skip, $renames, $part ) {
+		$vertices = 0;
+		$res = RTZ_Package::each_record( $path, function ( $r ) use ( $wpdb, $t, $vid, $now, &$munis, &$zonas, &$current, &$skip, $renames, $part, &$vertices ) {
 			if ( 'municipio' === $r['tipo'] ) {
 				$mg = self::clean_id( $r['municipio_georef'] ?? '' );
 				if ( '' === $mg || substr( $mg, 0, 2 ) !== $part['provincia'] && ( $r['provincia_georef'] ?? '' ) !== $part['provincia'] ) {
@@ -312,8 +315,13 @@ final class RTZ_Importer {
 				return new WP_Error( 'rtz_uid', 'Zona sin identificador válido.' );
 			}
 			$geom = $r['geometry'] ?? null;
-			if ( ! is_array( $geom ) || ! in_array( $geom['type'] ?? '', array( 'Polygon', 'MultiPolygon' ), true ) ) {
-				return new WP_Error( 'rtz_geom', 'Zona ' . $uid . ' sin polígono.' );
+			$gv   = RTZ_Package::validar_geometria( $geom );
+			if ( is_wp_error( $gv ) ) {
+				return new WP_Error( 'rtz_geom', 'Zona ' . $uid . ': ' . $gv->get_error_message() );
+			}
+			$vertices += $gv;
+			if ( $vertices > RTZ_Package::MAX_VERTICES_PARTE ) {
+				return new WP_Error( 'rtz_geom', 'La parte ' . $part['archivo'] . ' supera el máximo de vértices admitido.' );
 			}
 			$b = self::bbox( $r['bbox'] ?? array() );
 			$c = $r['centroide'] ?? array( 0, 0 );
@@ -365,23 +373,33 @@ final class RTZ_Importer {
 			$wpdb->query( 'ROLLBACK' );
 			return $res;
 		}
-		// Activación atómica por municipio: lo nuevo se ve, lo viejo queda guardado e inactivo.
-		foreach ( array_keys( $munis ) as $mg ) {
-			$wpdb->query( $wpdb->prepare( "UPDATE {$t['zonas']} SET activo=0 WHERE municipio_georef=%s AND version_id<>%d AND activo=1", $mg, $vid ) );
-			$wpdb->query( $wpdb->prepare( "UPDATE {$t['municipios']} SET activo=0 WHERE municipio_georef=%s AND version_id<>%d AND activo=1", $mg, $vid ) );
-			$wpdb->query( $wpdb->prepare( "UPDATE {$t['zonas']} SET activo=1 WHERE municipio_georef=%s AND version_id=%d", $mg, $vid ) );
-			$wpdb->query( $wpdb->prepare( "UPDATE {$t['municipios']} SET activo=1 WHERE municipio_georef=%s AND version_id=%d", $mg, $vid ) );
-		}
-		// Nombres puestos a mano: valen para la zona activa con el mismo uid (mismos radios).
-		foreach ( $renames as $uid => $nombre ) {
-			$wpdb->query( $wpdb->prepare( "UPDATE {$t['zonas']} SET nombre=%s WHERE uid=%s AND version_id=%d AND activo=1", $nombre, $uid, $vid ) );
-		}
-		if ( $wpdb->last_error ) {
-			$err = $wpdb->last_error;
+		// Activación atómica por municipio: lo nuevo se ve, lo viejo queda guardado e inactivo. Cada sentencia se comprueba:
+		// MySQL no revierte sola una transacción cuando falla una sentencia del medio.
+		try {
+			$run = static function ( $sql ) use ( $wpdb ) {
+				if ( false === $wpdb->query( $sql ) ) {
+					throw new RuntimeException( $wpdb->last_error ?: 'sentencia rechazada' );
+				}
+			};
+			foreach ( array_keys( $munis ) as $mg ) {
+				$run( $wpdb->prepare( "UPDATE {$t['zonas']} SET activo=0 WHERE municipio_georef=%s AND version_id<>%d AND activo=1", $mg, $vid ) );
+				$run( $wpdb->prepare( "UPDATE {$t['municipios']} SET activo=0 WHERE municipio_georef=%s AND version_id<>%d AND activo=1", $mg, $vid ) );
+				$run( $wpdb->prepare( "UPDATE {$t['zonas']} SET activo=1 WHERE municipio_georef=%s AND version_id=%d", $mg, $vid ) );
+				$run( $wpdb->prepare( "UPDATE {$t['municipios']} SET activo=1 WHERE municipio_georef=%s AND version_id=%d", $mg, $vid ) );
+				$activas = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$t['municipios']} WHERE municipio_georef=%s AND activo=1", $mg ) );
+				if ( 1 !== $activas ) {
+					throw new RuntimeException( 'el municipio ' . $mg . ' quedó con ' . $activas . ' versiones activas' );
+				}
+			}
+			// Nombres puestos a mano: valen para la zona activa con el mismo uid (mismos radios).
+			foreach ( $renames as $uid => $nombre ) {
+				$run( $wpdb->prepare( "UPDATE {$t['zonas']} SET nombre=%s WHERE uid=%s AND version_id=%d AND activo=1", $nombre, $uid, $vid ) );
+			}
+			$run( 'COMMIT' );
+		} catch ( Throwable $e ) {
 			$wpdb->query( 'ROLLBACK' );
-			return new WP_Error( 'rtz_db', 'Error activando zonas: ' . $err );
+			return new WP_Error( 'rtz_db', 'Error activando zonas (la versión anterior sigue activa): ' . $e->getMessage() );
 		}
-		$wpdb->query( 'COMMIT' );
 		wp_cache_delete( 'rtz_activas', 'rtz' );
 		return array( 'zonas' => $zonas, 'municipios' => count( $munis ) );
 	}

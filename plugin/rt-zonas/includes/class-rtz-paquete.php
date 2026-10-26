@@ -31,7 +31,11 @@ final class RTZ_Paquete {
 		$t    = RTZ_Schema::tables();
 		$mids = class_exists( 'RTPC_Paquete_Territorio' ) ? RTPC_Paquete_Territorio::municipios_del_paquete( $ctx ) : array();
 		// Sin municipios definidos (paquete «todos» sin reclamos ni clientes) no se exporta el país entero: solo las zonas vinculadas a Core.
-		$w = $wpdb->prepare( 'z.activo=1 AND z.id>%d', absint( $cursor ) ) . ( $mids ? ' AND z.localidad_id IN (' . implode( ',', array_map( 'absint', $mids ) ) . ')' : ' AND z.localidad_id>0' );
+		// Zonas activas del alcance + las que usan los casos del paquete aunque ya no estén activas (versión anterior):
+		// así un informe offline tiene el polígono y la población de cada zona citada.
+		$ref = array_values( array_unique( array_filter( array_map( 'absint', (array) apply_filters( 'rtpc_paquete_zonas_referenciadas', array(), $ctx ) ) ) ) );
+		$scope = 'z.activo=1' . ( $mids ? ' AND z.localidad_id IN (' . implode( ',', array_map( 'absint', $mids ) ) . ')' : ' AND z.localidad_id>0' );
+		$w = $wpdb->prepare( 'z.id>%d', absint( $cursor ) ) . ' AND ((' . $scope . ')' . ( $ref ? ' OR z.id IN (' . implode( ',', $ref ) . ')' : '' ) . ')';
 		$rows = (array) $wpdb->get_results( "SELECT z.*, g.geojson FROM {$t['zonas']} z JOIN {$t['geom']} g ON g.zona_id=z.id WHERE {$w} ORDER BY z.id LIMIT " . (int) min( 50, $limite ), ARRAY_A );
 		if ( $wpdb->last_error ) {
 			throw new RuntimeException( 'No se pudieron leer las zonas.' );
@@ -48,7 +52,7 @@ final class RTZ_Paquete {
 				'municipio_id' => $z['localidad_id'], 'municipio_georef' => $z['municipio_georef'], 'provincia_georef' => $z['provincia_georef'],
 				'poblacion' => $z['poblacion'], 'area_km2' => $z['area_km2'], 'centro' => $z['centro'], 'marcas' => $z['marcas'],
 				'barrios_osm' => $b['osm'], 'barrios_rt' => $b['rt'], 'version' => (string) $ver, 'version_id' => $z['version_id'],
-				'sector_m' => RTZ_Geo::SECTOR_M, 'geometria' => json_decode( (string) $r['geojson'], true ),
+				'sector_m' => RTZ_Geo::SECTOR_M, 'activa' => (bool) (int) $r['activo'], 'geometria' => json_decode( (string) $r['geojson'], true ),
 			) );
 		}
 		return array( 'rows' => $out, 'cursor' => (string) $last, 'done' => count( $rows ) < min( 50, $limite ) );

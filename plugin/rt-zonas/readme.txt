@@ -63,6 +63,14 @@ Core, ubicación de puntos, versión nueva remota, parte dañada, candado, ZIP m
 
 == Changelog ==
 
+= 1.1.1 =
+* Activación de una versión: cada sentencia y el COMMIT se comprueban; si algo falla, la versión anterior sigue activa entera.
+* Desinstalar ya no borra nada (se quitó la opción «borrar al quitar»).
+* La versión del paquete no puede salir de su carpeta («..»); límites de manifiesto, partes, registros, tamaño y vértices;
+  validación de polígonos (anillos cerrados, coordenadas numéricas en Argentina).
+* Exporta también las zonas inactivas que usan los reclamos del paquete.
+* Pruebas: tests/test-auditoria-zonas.php (24).
+
 = 1.1.0 =
 * Cada zona dice qué barrios la integran (lugares de OpenStreetMap dentro del polígono y barrios del
   catálogo RT por nombre o por reclamos ubicados): `rtz_barrios_de_zona( $id )`, `rtz_barrios_texto( $id )`
