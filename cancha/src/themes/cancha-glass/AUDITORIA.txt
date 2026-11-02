@@ -1,0 +1,49 @@
+CANCHA GLASS v1.0.0 — AUDITORÍA TÉCNICA (31/10/2026)
+
+ALCANCE: auditoría estática y pruebas de lógica con simulaciones locales.
+NO equivale a una auditoría independiente ni a certificación de seguridad, accesibilidad o producción.
+
+PROTECCIONES IMPLEMENTADAS
+- Entrada no autenticada con nonce, validación de campo oculto y control de transporte HTTPS.
+- wp_signon y sistema de contraseñas/cookies nativo de WordPress; password reset nativo.
+- Nuevos usuarios solo con rol subscriber y confirmación obligatoria de correo.
+- Token de verificación aleatorio (32 bytes) guardado como HMAC, 24 h, uso único, confirmación POST.
+- Reenvío de correo sin enumeración abierta de cuentas, limitación de intentos vía transients.
+- Aceptación de términos (documento SHA256, versión, origen y fecha UTC) y bloqueo ante cambios.
+- Publicación de política de privacidad exigida antes de activar registros.
+- Capacidad manage_options en Core y administración de sponsors.
+- Sanitización y escapado en pantallas; esc_url de links de patrocinadores.
+- Claves API encriptadas AES-256-GCM con salts de WordPress; nunca enviadas al cliente.
+- Sin endpoints HTTP arbitrarios, sin eval/PHP editable, ni ejecución de shortcodes externos.
+- PWA cachea solo recursos públicos CSS/JS/íconos. No cachea páginas ni cuentas.
+
+PRUEBAS QUE SE EJECUTARON
+- php -l en TODOS los archivos PHP del tema: OK.
+- node --check para JS público y código JS del service worker: OK.
+- Pruebas locales con mocks WordPress: 21 comprobaciones, todas OK.
+  Cubren cifrado/descifrado, cambio de proveedor, timeout/zona horaria,
+  consentimiento y política publicada, fechas de patrocinador, anti-CSRF,
+  rol subscriber, token de correo, activación una sola vez y renovación de términos.
+- Renderizado simulado de portada con funciones WP simuladas: OK (HTML generado).
+- Verificación de estructura y CRC del ZIP: OK.
+
+LIMITACIONES QUE REQUIEREN ACCIÓN
+1) No hay instalación real de WordPress ni base de datos/SMTP en este entorno.
+   Debe probarse en staging la instalación/actualización, la creación de páginas,
+   el login, el registro, el email, la caducidad y reenvío de enlaces, y los sponsors.
+2) La PWA debe comprobarse en Chrome/Android, Safari/iOS y hosting real bajo HTTPS.
+3) No se realizó pentest, comprobación de accesibilidad automática WCAG ni matriz de browsers.
+4) Los formularios reciben protección básica. Para producción se requiere endurecer wp-login.php,
+   XML-RPC según uso, y un WAF/captcha/monitoring si aparecen abusos; 2FA a administradores.
+5) Términos y Política de privacidad dependen del texto real del operador y revisión legal.
+6) SMTP aceptando wp_mail no garantiza entrega: probar correos reales, rebotes y spam.
+7) El core hoy está dentro del tema: migrar a plugin persistente antes de escalar o cambiar tema.
+8) APIs deportivas, predicciones, puntuación, notificaciones y GamiPress no están integrados.
+   Ningún resultado/pronóstico/puntaje ha sido fabricado o simulado en la web.
+9) El add-on aportado GamiPress - Leaderboards es v1.3.9 (2022). Requiere pruebas actuales
+   de licencia/compatibilidad con GamiPress/WordPress/PHP antes de activar en producción.
+10) API base/secret se configuran, pero no existe proveedor operativo ni prueba de conexión.
+
+VEREDICTO
+APTO COMO PAQUETE DE INSTALACIÓN DEL TEMA Y PARA VALIDACIÓN EN STAGING.
+NO CERTIFICADO COMO SITIO DE PRODUCCIÓN NI COMO PLATAFORMA DEPORTIVA COMPLETA.

@@ -1,0 +1,1 @@
+<?php get_header(); ?><section class="glass auth-card"><div class="eyebrow">ERROR 404</div><h1>Fuera de juego</h1><p class="muted">No encontramos esta página.</p><a class="button primary" href="<?php echo esc_url(home_url('/')); ?>">Volver al inicio</a></section><?php get_footer(); ?>

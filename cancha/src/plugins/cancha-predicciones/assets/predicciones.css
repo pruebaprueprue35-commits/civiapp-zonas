@@ -1,0 +1,25 @@
+.cancha-pred-panel{margin:6px 0 18px}.cancha-pred-score{margin:0 0 14px;padding:10px 14px;border:1px solid var(--border,#ddd);border-radius:13px;background:var(--glass,#fff);font-size:14px}.cancha-pred-score strong{color:#561ec4;font-size:19px}.cancha-pred-score small{display:block;color:var(--muted,#777);font-size:11px}.cancha-pred-signup{padding:11px 14px;margin-bottom:14px;background:var(--glass,#fff);border:1px solid var(--border,#ddd);border-radius:12px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px}.cancha-pred-signup p{margin:0;font-size:13px}.cancha-pred-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:12px}.cancha-pred-match{padding:15px;background:var(--glass,#fff);border:1px solid var(--border,#e6e6eb);border-radius:16px;box-shadow:0 3px 13px #0000000b}.cancha-pred-time{font-size:11px;color:var(--muted,#666);margin-bottom:10px}.cancha-pred-teams{display:grid;grid-template-columns:1fr 24px 1fr;gap:8px;align-items:center;text-align:center;margin-bottom:13px}.cancha-pred-teams strong{font-size:13px;font-weight:850;overflow-wrap:anywhere}.cancha-pred-teams span{font-size:11px;color:var(--muted,#666)}.cancha-pred-picks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.cancha-pred-picks button{padding:9px 3px;border:1px solid #d7c3ff;border-radius:10px;background:#f7f3ff;color:#4b199b;font-weight:900;font-size:16px}.cancha-pred-picks button small{display:block;font-weight:650;font-size:9px}.cancha-pred-picks button.picked{background:#5e21bb;border-color:#5e21bb;color:white}.cancha-pred-picks button:hover{border-color:#5e21bb}.cancha-pred-points{font-size:11px;margin-top:12px;padding:8px;text-align:center;background:#f4f0fc;color:#4b199b;border-radius:8px}.cancha-pred-locked{font-size:12px;color:var(--muted,#666)}.cancha-pred-notice{border:1px solid #d7c3ff;padding:10px 13px;border-radius:12px;background:#f5f0ff;color:#3e147c}
+/* 0.3.0 — pestañas Oficiales | Amateur */
+.cancha-pred-v3{display:flex;flex-direction:column;gap:12px}
+.cancha-pred-head h1{margin:4px 0}.cancha-pred-head p{color:var(--muted);margin:0}
+.cancha-pred-tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:5px;border-radius:14px;background:var(--soft);border:1px solid var(--border);position:sticky;top:0;z-index:5;backdrop-filter:blur(10px)}
+.cancha-pred-tabs a{text-align:center;padding:10px 8px;border-radius:10px;font-weight:800;color:var(--muted)}
+.cancha-pred-tabs a.is-active{background:var(--glass-strong);color:var(--text);box-shadow:0 2px 10px rgba(0,0,0,.08)}
+.cancha-pred-totals{display:flex;gap:8px}.cancha-pred-totals span{flex:1;padding:10px 12px;border-radius:12px;background:var(--glass);border:1px solid var(--border);font-size:13px;color:var(--muted)}.cancha-pred-totals strong{color:var(--text);font-size:18px}
+.cancha-pred-access{padding:14px;border-radius:14px;background:var(--soft);border:1px dashed var(--border)}
+.cancha-pred-access p{margin:0 0 10px}
+.cancha-pred-source{font-size:12px;color:var(--muted);margin:0 0 6px}
+.cancha-pred-day{font-size:16px;margin:16px 0 6px}.cancha-pred-day small{color:var(--muted);font-weight:600}
+.cancha-pred-league{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:12px 0 6px}
+.cancha-pred-card{padding:10px 12px;border-radius:14px;background:var(--glass);border:1px solid var(--border);margin-bottom:8px}
+.cancha-pred-match{display:grid;grid-template-columns:auto minmax(0,1fr) auto minmax(0,1fr);gap:8px;align-items:center;font-weight:720}
+.cancha-pred-match span:nth-child(2){text-align:right}.cancha-pred-match b{color:var(--muted);font-size:12px}
+.cancha-pred-hour{font-size:12px;color:var(--muted);font-weight:700;min-width:44px}
+.cancha-pred-notice{padding:10px 12px;border-radius:12px;font-weight:700}
+.cancha-pred-notice.is-ok{background:rgba(24,215,122,.15);color:var(--text);border:1px solid rgba(24,215,122,.45)}
+.cancha-pred-notice.is-warn{background:rgba(255,170,0,.14);color:var(--text);border:1px solid rgba(255,170,0,.45)}
+.cancha-pred-mine{margin-top:14px;padding:10px 12px;border-radius:12px;background:var(--glass);border:1px solid var(--border)}
+.cancha-pred-mine summary{cursor:pointer;font-weight:800}
+.cancha-pred-mine ul{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.cancha-pred-mine li{display:flex;flex-direction:column;font-size:13px}.cancha-pred-mine li span,.cancha-pred-mine li em{color:var(--muted);font-size:12px}
+@media (max-width:520px){.cancha-pred-match{grid-template-columns:40px minmax(0,1fr) 18px minmax(0,1fr);font-size:13px;gap:5px}}

@@ -1,0 +1,241 @@
+/* CANCHA Ligas — light-first mobile UI, preserving existing posts and plugin contracts. */
+:root:not([data-theme=dark]),:root[data-theme=light]{color-scheme:light;--bg:#f7f7f9;--text:#181921;--muted:#666a77;--glass:#fff;--glass-strong:#fff;--border:#e9e8ee;--shadow:0 5px 20px rgba(30,29,59,.07);--soft:#f3f3f7}
+:root[data-theme=dark]{--bg:#10131d;--text:#f6f6fd;--muted:#b7b9cb;--glass:#1c2030;--glass-strong:#1c2030;--border:#343849;--soft:#25283a;--shadow:0 9px 30px rgba(0,0,0,.25)}
+body,:root[data-theme=light] body,:root[data-theme=dark] body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}
+body::before,:root[data-theme=light] body::before{display:none}
+.site-wrap{width:min(1240px,calc(100% - 36px))}
+.site-header.cancha-ligas-header{position:relative;background:transparent!important;border:0!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;padding:8px 0 10px;margin:16px 0 0;border-radius:0}
+.cancha-ligas-header .header-main{display:flex;align-items:center;gap:22px;justify-content:space-between;min-height:66px}
+.cancha-ligas-header .brand{font-style:italic;font-weight:950;letter-spacing:-.085em;font-size:clamp(23px,3vw,36px);color:var(--text);display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+.cancha-ligas-header .brand img{max-height:56px;max-width:210px;object-fit:contain}
+.cancha-ligas-header .brand-symbol{font-size:35px;font-style:normal;color:#12bf70;display:inline-block;transform:rotate(-20deg);line-height:1}
+.ligas-header-search{width:min(460px,46vw);display:flex;align-items:center;gap:6px;border-radius:50px;background:#eeedf1;color:#272831;padding:5px 18px;min-height:48px;margin-left:auto}
+.ligas-header-search input{border:0!important;outline:0!important;box-shadow:none!important;background:transparent!important;color:#272831!important;width:100%;padding:6px 4px;font-size:15px}
+.ligas-header-search .ligas-search-icon{font-size:30px;line-height:1}
+.cancha-ligas-header .header-actions{display:flex;align-items:center;gap:9px;margin-left:0}
+.cancha-ligas-header .nav-toggle,.cancha-ligas-header .icon-button{display:flex;align-items:center;justify-content:center;border:0;background:transparent;color:var(--text);font-size:24px;padding:7px;width:40px;height:40px}
+.cancha-ligas-header .ligas-account{font-size:13px;font-weight:750;border:1px solid var(--border);padding:9px 13px;border-radius:24px;color:var(--text)}
+.cancha-ligas-header .site-nav{display:none!important;position:absolute;z-index:70;top:calc(100% - 4px);right:0;left:auto;width:min(410px,100%);background:var(--glass-strong);border:1px solid var(--border);border-radius:18px;padding:12px;box-shadow:0 16px 36px #12131b33}
+.cancha-ligas-header .site-nav.open{display:block!important}
+.cancha-ligas-header .nav-items{display:flex;flex-direction:column;align-items:stretch;gap:0;padding:0;margin:0;list-style:none}
+.cancha-ligas-header .nav-items a{display:block;padding:11px 15px;font-size:15px;border-radius:10px;color:var(--text)}
+.cancha-ligas-header .nav-items a:hover{background:var(--soft)}
+.site-main{padding-top:10px}
+.ligas-layout{display:flex;flex-direction:column;gap:24px}
+.ligas-featured-ad,.ligas-home-hero{height:auto;aspect-ratio:3.03/1;min-height:200px;max-height:360px;border-radius:19px;background:#142042;position:relative;overflow:hidden;box-shadow:0 4px 14px rgba(15,19,37,.12)}
+.ligas-featured-ad-link,.ligas-featured-image{display:block;width:100%;height:100%}
+.ligas-featured-image{object-fit:cover;object-position:center}
+.ligas-ad-disclosure{position:absolute;z-index:2;top:10px;left:12px;background:rgba(0,0,0,.58);color:#fff;font-size:10px;padding:4px 8px;border-radius:8px;letter-spacing:.04em}
+.ligas-dismiss{position:absolute;z-index:2;right:12px;top:12px;width:35px;height:35px;border:0;border-radius:50%;background:rgba(15,19,28,.7);color:white;font-size:25px;line-height:30px}
+.ligas-featured-noimage{width:100%;height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:9px;background:linear-gradient(115deg,#031e32cc,#3d187bcc),url('../img/stadium.webp') center/cover;color:#fff;text-align:center;padding:30px}
+.ligas-featured-noimage>span{font-size:12px;font-weight:850;letter-spacing:.24em}
+.ligas-featured-noimage strong{font-size:clamp(28px,5vw,60px);font-weight:900;text-shadow:0 4px 16px #0009}
+.ligas-home-empty{background:linear-gradient(105deg,rgba(14,9,53,.97),rgba(58,14,119,.78)),url('../img/stadium.webp') center/cover;display:flex;align-items:center;max-height:350px}
+.ligas-hero-copy{padding:clamp(18px,5vw,60px);color:#fff}
+.ligas-hero-kicker{font-size:clamp(9px,1.1vw,12px);font-weight:900;letter-spacing:.2em;color:#b9fcce}
+.ligas-hero-copy h1{font-size:clamp(24px,4.6vw,54px);letter-spacing:-.055em;margin:8px 0 12px}
+.ligas-hero-copy h1 em{color:#96f6ad;font-style:normal}
+.ligas-hero-copy p{font-size:clamp(11px,1.5vw,16px);color:#effdf3;margin:0 0 20px}
+.ligas-hero-link{background:#a2fd37;color:#0c1b17;padding:10px 16px;border-radius:28px;font-weight:850;display:inline-flex;gap:12px}
+.ligas-sponsor-carousel{display:flex;gap:9px;align-items:center;max-width:100%;min-width:0}
+.ligas-sponsor-arrow{width:36px;min-width:36px;height:36px;border-radius:50%;border:1px solid var(--border);box-shadow:var(--shadow);background:var(--glass);color:var(--text);font-size:28px;line-height:1;display:grid;place-items:center}
+.ligas-sponsor-track{display:flex;gap:8px;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;scrollbar-width:none;flex:1;min-width:0;padding:5px 0}
+.ligas-sponsor-track::-webkit-scrollbar{display:none}
+.ligas-sponsor-tile{scroll-snap-align:start;flex:0 0 clamp(150px,25%,260px);min-height:74px;border:1px solid var(--border);border-radius:14px;background:var(--glass);display:flex;gap:10px;align-items:center;justify-content:center;padding:9px 13px;text-align:center;color:var(--text);box-shadow:0 2px 6px #05051b06}
+.ligas-sponsor-tile img{width:55px;height:48px;object-fit:contain;flex-shrink:0}
+.ligas-sponsor-tile strong{font-size:clamp(12px,1.1vw,17px);font-weight:900;overflow-wrap:anywhere}
+.ligas-sponsor-initial{font-size:25px;color:#5f22c4}
+.ligas-filters{display:flex;gap:10px;flex-wrap:nowrap;width:100%;overflow-x:auto;scrollbar-width:none}
+.ligas-filters button{flex:1 0 auto;border:0;border-radius:40px;padding:11px 21px;background:#eeedf0;color:#4b4c53;font-size:clamp(13px,1.7vw,17px);font-weight:750;min-width:125px;white-space:nowrap}
+.ligas-filters button.is-active{background:#17171b;color:white}
+.ligas-section{min-width:0}
+.ligas-section-head{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:16px}
+.ligas-section-head h2{font-size:clamp(19px,2.6vw,29px);color:var(--text);font-weight:850;letter-spacing:-.04em}
+.ligas-section-head h2 span{font-size:.88em;margin-right:6px}
+.ligas-section-head>a{font-size:clamp(12px,1.5vw,16px);font-weight:650;white-space:nowrap;color:var(--text)}
+.ligas-section-head p{margin:3px 0 0;font-size:12px;color:var(--muted)}
+.ligas-official-grid,.ligas-amateur-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.ligas-official-card{position:relative;display:block;border-radius:17px;overflow:hidden;box-shadow:0 3px 9px #080b1822;background:var(--glass);border:1px solid var(--border);color:var(--text)}
+.ligas-official-link{display:block;color:inherit}.ligas-favorite-official{z-index:2;top:6px;right:6px;color:white;text-shadow:0 2px 4px #0009}.ligas-official-art{min-height:128px;display:flex;align-items:center;gap:15px;padding:20px 18px;background-image:linear-gradient(90deg,rgba(3,17,53,.96),rgba(8,60,118,.69)),url('../img/stadium.webp');background-position:center;background-size:cover;color:#fff}
+.ligas-official-symbol{font-size:clamp(34px,4.7vw,58px);line-height:1;filter:drop-shadow(0 3px 8px #0007)}
+.ligas-official-category{display:block;text-transform:uppercase;font-weight:650;letter-spacing:.12em;font-size:10px;opacity:.9}
+.ligas-official-art h3{font-size:clamp(16px,2vw,26px);color:#fff;text-transform:uppercase;font-weight:900;line-height:1.05;letter-spacing:-.03em;margin-top:5px}
+.ligas-official-art.art-primera{background-image:linear-gradient(90deg,#002f71f7,#1759a4aa),url('../img/stadium.webp')}
+.ligas-official-art.art-libertadores{background-image:linear-gradient(100deg,#271409f7,#926020c2),url('../img/stadium.webp')}
+.ligas-official-art.art-sudamericana{background-image:linear-gradient(110deg,#0a2760f0,#2a75afb0),url('../img/stadium.webp')}
+.ligas-official-meta{padding:13px 17px;display:flex;justify-content:space-between;align-items:center;min-height:53px;color:var(--text)}
+.ligas-status{display:inline-flex;align-items:center;gap:3px;border-radius:50px;font-size:11px;font-weight:800;padding:3px 9px;white-space:nowrap;width:max-content}
+.ligas-status.connected,.ligas-status.playing{color:#116a3e;background:#d3f7dc}
+.ligas-status.unconnected,.ligas-status.upcoming{color:#6034aa;background:#eee3ff}
+.ligas-status.finished{color:#626573;background:#e7e7e9}
+.ligas-card-more{font-weight:900;font-size:22px}
+.ligas-create-btn{padding:9px 14px!important;border-radius:11px;border:1px solid #6221cb;color:#6221cb!important;background:#f3edff;font-weight:750!important;font-size:13px!important}
+.ligas-amateur-card{display:flex;align-items:flex-start;min-width:0;position:relative;border-radius:16px;padding:12px;background:var(--glass);border:1px solid var(--border);box-shadow:0 3px 8px #080b1612;color:var(--text)}
+.ligas-amateur-card:hover,.ligas-official-card:hover{box-shadow:0 8px 22px #080b181c}
+.ligas-amateur-main{display:flex;align-items:center;flex:1;min-width:0;gap:12px;color:var(--text);padding-right:24px}
+.ligas-amateur-logo{width:90px;height:90px;flex:0 0 90px;object-fit:cover;border-radius:12px}
+.ligas-amateur-logo-fallback{display:grid;place-items:center;background:linear-gradient(125deg,#e0f5e3,#c9eecb);font-size:40px}
+.ligas-amateur-info{display:flex;flex-direction:column;align-items:flex-start;min-width:0;gap:5px}
+.ligas-amateur-info>strong{font-size:clamp(13px,1.7vw,20px);font-weight:900;line-height:1.18;overflow-wrap:anywhere}
+.ligas-amateur-metrics{font-size:11px;font-weight:650;color:var(--muted)}
+.ligas-progress{height:7px;width:100%;min-width:78px;background:#e0e2e9;border-radius:12px;overflow:hidden;margin-top:2px}
+.ligas-progress>span{display:block;height:100%;background:linear-gradient(90deg,#0eca48,#11a747);border-radius:12px}
+.ligas-favorite{position:absolute;top:7px;right:9px;font-size:23px;border:0;background:transparent;line-height:1;color:#7f7e85;padding:4px}
+.ligas-favorite[aria-pressed=true]{color:#ffba00}
+.ligas-empty{padding:27px;background:var(--glass);border:1px dashed #d9d4e3;border-radius:15px;color:var(--muted)}
+.ligas-empty h3{color:var(--text);font-size:18px}.ligas-empty p{font-size:13px;margin:7px 0}
+.ligas-predictions .cancha-pred-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.ligas-news-section{margin:28px 0}
+.ligas-section .cancha-news-card,.ligas-section .cancha-news-grid{border-radius:16px}
+.ligas-section [hidden],.ligas-featured-ad[hidden]{display:none!important}
+.cancha-bottom-tabs{background:var(--glass-strong);border:0;border-top:1px solid var(--border);box-shadow:0 -4px 20px #00000012;backdrop-filter:blur(20px);color:var(--text)}
+.cancha-bottom-tabs a{color:var(--muted);text-decoration:none!important}
+.cancha-bottom-tabs a[aria-current=page]{color:#5d19ca;font-weight:850}
+.cancha-bottom-tabs a span{font-size:25px}
+.cancha-bottom-tabs a small{font-size:12px}
+.ligas-layout a:hover{color:inherit}
+@media (min-width:900px){.cancha-bottom-tabs{display:none}.ligas-official-art{min-height:170px}.ligas-amateur-card{min-height:130px}.ligas-amateur-logo{width:115px;height:110px;flex-basis:115px}}
+@media (max-width:900px){.site-wrap{width:calc(100% - 28px)}.cancha-ligas-header .header-main{gap:12px}.cancha-ligas-header .ligas-account{display:none}.ligas-official-art{min-height:100px}}
+@media (max-width:700px){
+.site-wrap{width:calc(100% - 22px)}
+.site-header.cancha-ligas-header{margin:12px 0 0;padding:4px 0 8px}
+.cancha-ligas-header .header-main{gap:7px;min-height:52px}
+.cancha-ligas-header .brand{font-size:clamp(19px,5.2vw,28px);gap:4px}
+.cancha-ligas-header .brand-symbol{font-size:27px}
+.cancha-ligas-header .brand img{max-width:110px;max-height:43px}
+.ligas-header-search{min-width:0;flex:1;margin-left:5px;padding:4px 9px;min-height:39px}
+.ligas-header-search .ligas-search-icon{font-size:22px}
+.ligas-header-search input{font-size:clamp(11px,2.5vw,14px);padding:4px 1px}
+.cancha-ligas-header .header-actions{gap:1px}.cancha-ligas-header .nav-toggle{width:30px;height:32px;font-size:21px;padding:4px}.cancha-ligas-header .icon-button{display:none}
+.site-main{padding-top:8px}
+.ligas-layout{gap:18px}
+.ligas-featured-ad,.ligas-home-hero{min-height:134px;border-radius:15px;aspect-ratio:2.9/1}
+.ligas-ad-disclosure{font-size:8px;top:7px;left:7px;padding:2px 5px}
+.ligas-dismiss{width:26px;height:26px;right:8px;top:8px;font-size:20px;line-height:1}
+.ligas-hero-copy{padding:18px}
+.ligas-hero-copy h1{font-size:clamp(21px,5vw,34px);margin:5px 0 5px}
+.ligas-hero-copy p{display:none}
+.ligas-hero-link{font-size:10px;padding:7px 12px;margin-top:7px}
+.ligas-sponsor-arrow{width:27px;min-width:27px;height:27px;font-size:22px}
+.ligas-sponsor-track{gap:6px}.ligas-sponsor-tile{flex-basis:clamp(115px,31%,160px);min-height:59px;padding:6px;gap:4px}
+.ligas-sponsor-tile img{height:32px;width:35px}.ligas-sponsor-tile strong{font-size:10px}
+.ligas-filters{gap:5px}.ligas-filters button{padding:10px 14px;min-width:0;flex:1 0 auto;font-size:12px}
+.ligas-section-head{margin-bottom:12px;gap:6px}.ligas-section-head h2{font-size:clamp(17px,4vw,22px)}.ligas-section-head p{font-size:10px}
+.ligas-section-head>a{font-size:11px}.ligas-create-btn{padding:7px 8px!important;font-size:10px!important}
+.ligas-official-grid,.ligas-amateur-grid{gap:10px}
+.ligas-official-card{border-radius:12px}.ligas-official-art{padding:11px 9px;gap:8px;min-height:99px}.ligas-official-symbol{font-size:26px}
+.ligas-official-category{font-size:8px}.ligas-official-art h3{font-size:clamp(12px,2.8vw,18px);line-height:1.11}
+.ligas-official-meta{padding:8px 9px;min-height:35px}.ligas-status{font-size:9px;padding:2px 6px}.ligas-card-more{font-size:15px}
+.ligas-amateur-card{padding:8px;border-radius:12px}.ligas-amateur-main{gap:7px;padding-right:12px}.ligas-amateur-logo{width:45px;height:67px;flex-basis:45px;border-radius:8px}
+.ligas-amateur-logo-fallback{font-size:26px}
+.ligas-amateur-info{gap:4px}.ligas-amateur-info>strong{font-size:clamp(11px,2.7vw,15px)}.ligas-amateur-metrics{font-size:9px}
+.ligas-favorite{font-size:17px;top:3px;right:3px}.ligas-progress{height:5px}
+.cancha-bottom-tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));position:fixed;bottom:0;left:0;right:0;z-index:45;border-radius:13px 13px 0 0;padding:7px 6px max(7px,env(safe-area-inset-bottom))}
+.cancha-bottom-tabs a{display:flex;align-items:center;flex-direction:column;gap:0}.cancha-bottom-tabs a span{font-size:22px}.cancha-bottom-tabs a small{font-size:10px}
+.site-footer{margin-bottom:76px}
+}
+@media(max-width:385px){.ligas-header-search{max-width:38vw}.ligas-filters button{font-size:11px;padding:9px 10px}.ligas-official-art{min-height:87px}.ligas-official-symbol{font-size:19px}.ligas-amateur-logo{width:37px;flex-basis:37px}.ligas-amateur-metrics{font-size:8px}}
+@media(prefers-reduced-motion:reduce){.ligas-official-card,.ligas-amateur-card,.ligas-sponsor-track{scroll-behavior:auto;transition:none}}
+
+.ligas-featured-logo{background:linear-gradient(100deg,#061b38,#36217b),url('../img/stadium.webp') center/cover}.ligas-featured-logo .ligas-featured-ad-link{padding:20px 55px;display:flex;justify-content:center;align-items:center}.ligas-featured-logo .ligas-featured-image{object-fit:contain;max-height:100%;filter:drop-shadow(0 4px 12px #0007)}
+
+@keyframes cancha-banner-appear{from{opacity:.5;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.ligas-featured-ad,.ligas-home-hero{animation:cancha-banner-appear .55s ease both}
+@media(prefers-reduced-motion:reduce){.ligas-featured-ad,.ligas-home-hero{animation:none}}
+/* === CANCHA Partidos v1.4: mobile-first schedule, explicit theme switch, accessible menu === */
+.cancha-home-v14{display:flex;flex-direction:column;gap:18px;min-width:0}
+.cancha-home-v14>.ligas-featured-ad{margin:0}
+.cancha-home-v14>.ligas-sponsor-carousel{margin:0}
+.cancha-matchday{min-width:0;display:flex;flex-direction:column;gap:14px}
+.cancha-matchday-heading{display:flex;align-items:end;justify-content:space-between;gap:12px;padding:5px 2px}
+.cancha-matchday-heading h2{font-size:clamp(20px,3vw,31px);margin:5px 0 0;font-weight:830}
+.cancha-coverage-note{font-size:12px;color:var(--muted);white-space:nowrap}
+.cancha-datebar{display:flex;align-items:center;gap:6px;position:relative;padding:7px 8px;background:var(--glass);color:var(--text);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);min-width:0}
+.cancha-day-scroll{display:flex;align-items:stretch;flex:1;min-width:0;overflow-x:auto;gap:3px;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+.cancha-day-item{min-width:92px;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:9px 8px;border-radius:10px;color:var(--muted);white-space:nowrap;gap:2px;text-align:center;font-size:13px;font-weight:720;border-bottom:3px solid transparent}
+.cancha-day-item small{font-size:10px;font-weight:580;color:var(--muted)}
+.cancha-day-item.is-selected{background:color-mix(in srgb,var(--accent) 11%,transparent);color:var(--text);border-bottom-color:#6d24c5}
+.cancha-day-item:hover{color:var(--text);background:var(--soft)}
+.cancha-day-arrow,.cancha-calendar-picker{flex:none;display:flex;align-items:center;justify-content:center;min-width:32px;height:43px;border:0;border-radius:11px;background:var(--soft);color:var(--text);font-size:24px}
+.cancha-calendar-picker{gap:1px;padding:0 7px;font-size:14px}
+.cancha-calendar-picker input[type=date]{width:24px;max-width:28px;height:35px;background:transparent;border:0;color:var(--text);font-size:0;cursor:pointer}
+.cancha-calendar-picker input[type=date]::-webkit-calendar-picker-indicator{width:20px;opacity:1;cursor:pointer}
+.cancha-matchday-grid{display:grid;gap:12px;grid-template-columns:1fr}
+.cancha-fixture-league{background:var(--glass);border:1px solid var(--border);border-radius:18px;overflow:hidden;box-shadow:var(--shadow)}
+.cancha-fixture-league-head{display:flex;gap:11px;align-items:center;padding:13px 17px;background:var(--soft)}
+.cancha-fixture-league-head h3{font-size:clamp(15px,1.7vw,20px);flex:1;letter-spacing:-.02em}
+.cancha-league-count{font-size:11px;color:var(--muted);white-space:nowrap}
+.cancha-league-toggle{border:0;background:transparent;color:var(--text);font-size:22px;line-height:1;padding:1px 7px;border-radius:8px}
+.cancha-fixture-league.is-collapsed>.cancha-fixture{display:none}
+.cancha-fixture{border-top:1px solid var(--border);padding:8px 14px 10px}
+.cancha-fixture-main{display:grid;grid-template-columns:73px minmax(0,1fr) auto minmax(0,1fr) 21px;align-items:center;gap:8px;min-height:48px;font-size:14px;color:var(--text)}
+.cancha-fixture-time{font-size:11px;color:var(--muted);font-weight:740}
+.cancha-fixture-team{font-weight:710;min-width:0;overflow-wrap:anywhere}
+.cancha-fixture-team:nth-of-type(3){text-align:right}
+.cancha-fixture-result{font-size:15px;white-space:nowrap;min-width:33px;text-align:center}
+.cancha-fixture-more{text-align:center;color:var(--muted);font-size:15px}
+.cancha-fixture-prediction{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;background:var(--soft);border-radius:11px;padding:9px 11px;margin:7px 0 2px;font-size:11px;color:var(--muted)}
+.cancha-fixture-prediction>a{color:#7b37c7;font-weight:760;text-decoration:underline}
+.cancha-inline-picks{display:flex;align-items:center;gap:5px}
+.cancha-inline-picks button{min-width:35px;min-height:32px;padding:5px 8px;color:var(--text);border:1px solid var(--border);border-radius:8px;background:var(--glass);font-size:13px;font-weight:800}
+.cancha-inline-picks button.is-picked{background:#6b20c5;color:#fff;border-color:#6b20c5}
+.cancha-no-fixtures{padding:27px 19px;background:var(--glass);border:1px solid var(--border);border-radius:18px}
+.cancha-no-fixtures strong{display:block;font-size:17px}
+.cancha-no-fixtures p{font-size:13px;margin:11px 0;color:var(--muted)}
+.cancha-no-fixtures a{color:#8a42d5;font-weight:730}
+.cancha-data-disclosure{font-size:11px;color:var(--muted);line-height:1.6;margin:0}
+.cancha-home-shortcuts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.cancha-home-shortcuts a{padding:13px 10px;text-align:center;border-radius:12px;background:var(--glass);border:1px solid var(--border);font-weight:750;font-size:13px}
+.cancha-home-tournaments{margin-top:10px;display:grid;gap:14px}
+.cancha-home-tournaments .ligas-amateur-grid{margin-top:8px}
+.cancha-alert-ok{padding:12px 16px;border-radius:12px;background:#e4f8eb;color:#136835;border:1px solid #9ee0b2;font-weight:700}
+.cancha-ligas-header .icon-button.cancha-theme-visible{display:inline-flex!important;width:auto;min-width:44px;padding:6px 9px;gap:4px;align-items:center;justify-content:center;border:1px solid var(--border);border-radius:12px;font-size:20px;line-height:1.3}
+.cancha-theme-word{font-size:11px;font-weight:760}
+.cancha-menu-title,.cancha-menu-tools{display:flex;align-items:center;gap:8px;padding:9px 8px 14px;border-bottom:1px solid var(--border);margin-bottom:7px}
+.cancha-menu-title{justify-content:space-between}
+.cancha-menu-close{border:0;background:var(--soft);color:var(--text);font-size:25px;border-radius:7px;min-width:36px;min-height:36px}
+.cancha-menu-tools{flex-wrap:wrap}
+.cancha-menu-tools a,.cancha-menu-tools button{border:1px solid var(--border);background:var(--soft);color:var(--text);padding:9px 11px;border-radius:9px;font-size:12px;font-weight:750}
+.cancha-bottom-tabs button.cancha-more-bottom{border:0;background:transparent;color:var(--muted);display:flex;align-items:center;flex-direction:column;gap:0;cursor:pointer;justify-content:center}
+.cancha-bottom-tabs button.cancha-more-bottom span{font-size:22px;line-height:1.45}
+.cancha-bottom-tabs button.cancha-more-bottom small{font-size:10px}
+.cancha-bottom-tabs button.cancha-more-bottom[aria-expanded=true]{color:#7a36d4}
+.cancha-pred-official{margin-top:28px;padding-top:21px;border-top:1px solid var(--border)}
+.cancha-pred-official h3{font-size:20px}
+.cancha-pred-official>p{font-size:13px;color:var(--muted);margin:10px 0}
+.cancha-pred-official-item{padding:13px 0;border-bottom:1px solid var(--border)}
+.cancha-pred-official-item p{margin:6px 0;color:var(--text)}
+@media(min-width:900px){.cancha-matchday-grid{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}}
+@media(max-width:700px){
+ .cancha-ligas-header .header-main{gap:5px}
+ .cancha-ligas-header .brand{font-size:clamp(18px,4.5vw,25px)}
+ .cancha-ligas-header .brand img{max-width:96px}
+ .ligas-header-search{margin-left:0;min-height:39px;min-width:0}
+ .ligas-header-search input{font-size:11px}
+ .cancha-ligas-header .header-actions{gap:1px}
+ .cancha-ligas-header .icon-button.cancha-theme-visible{min-width:37px;width:37px;min-height:35px;padding:3px;font-size:19px}
+ .cancha-theme-word{display:none}
+ .cancha-ligas-header .nav-toggle{width:32px}
+ .cancha-datebar{padding:5px 2px;gap:2px;border-radius:12px}
+ .cancha-day-item{min-width:75px;padding:8px 5px;font-size:11px}
+ .cancha-day-item small{font-size:9px}
+ .cancha-day-arrow{min-width:25px;width:25px}
+ .cancha-calendar-picker{min-width:27px;padding:0 2px}
+ .cancha-calendar-picker label{display:none}
+ .cancha-matchday-heading h2{font-size:20px}
+ .cancha-coverage-note{font-size:10px}
+ .cancha-fixture{padding:6px 8px 8px}
+ .cancha-fixture-main{grid-template-columns:46px minmax(0,1fr) 32px minmax(0,1fr) 13px;gap:4px;font-size:11px}
+ .cancha-fixture-time{font-size:9px}
+ .cancha-fixture-result{font-size:12px;min-width:29px}
+ .cancha-fixture-team{font-size:11px}
+ .cancha-fixture-league-head{padding:11px 12px}
+ .cancha-fixture-league-head h3{font-size:15px}
+ .cancha-fixture-prediction{font-size:10px;gap:6px}
+ .cancha-home-shortcuts{gap:5px}
+ .cancha-home-shortcuts a{padding:10px 6px;font-size:10px}
+ .cancha-ligas-header .site-nav{position:fixed;top:10vh;left:5vw;right:5vw;width:90vw;max-height:calc(100dvh - 20vh);overflow:auto;z-index:90}
+ .cancha-home-v14{gap:13px}
+ .cancha-bottom-tabs button.cancha-more-bottom small{font-size:10px}
+}
+@media(prefers-reduced-motion:reduce){.cancha-day-scroll{scroll-behavior:auto}}

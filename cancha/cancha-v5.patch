@@ -1,0 +1,1187 @@
+diff --git a/plugins/cancha-ads/cancha-ads.php b/plugins/cancha-ads/cancha-ads.php
+index 2b0731e..78c8358 100644
+--- a/plugins/cancha-ads/cancha-ads.php
++++ b/plugins/cancha-ads/cancha-ads.php
+@@ -2,13 +2,13 @@
+ /**
+  * Plugin Name: CANCHA · Ads
+  * Description: Campañas gráficas con ubicaciones, vigencia y etiquetas de publicidad, dentro del menú CANCHA. Sin scripts externos.
+- * Version: 0.5.0
++ * Version: 0.6.0
+  * Requires at least: 6.4
+  * Requires PHP: 8.0
+  * License: GPL-2.0-or-later
+  */
+ defined('ABSPATH') || exit;
+-define('CANCHA_ADS_VERSION','0.5.0');
++define('CANCHA_ADS_VERSION','0.6.0');
+ function cancha_ads_slots(){
+     return [
+         'home_top'=>'Inicio · sponsor principal (banner grande)',
+@@ -20,6 +20,9 @@ function cancha_ads_slots(){
+         'player'=>'Jugadores · ficha individual',
+         'news_feed'=>'Novedades · feed y noticias',
+         'search'=>'Buscador · página de resultados',
++        'partidos'=>'Partidos profesionales · entre ligas',
++        'amateur'=>'Fútbol amateur · portada de torneos',
++        'predicciones'=>'Predicciones · debajo de las pestañas',
+     ];
+ }
+ add_action('init',function(){
+@@ -85,8 +88,11 @@ function cancha_ads_current($slot,$competition=0,$limit=4){
+     }
+     return $out;
+ }
++/** 0.6.0: las nuevas ubicaciones usan campañas de «Inicio · después de los módulos» mientras no tengan propias. */
++function cancha_ads_fallback_slot($slot){return in_array($slot,['partidos','amateur','predicciones','news_feed'],true)?'home_bottom':'';}
+ function cancha_ads_html($slot,$competition=0,$limit=4){
+     $ads=cancha_ads_current($slot,$competition,$limit);
++    if(!$ads && cancha_ads_fallback_slot($slot))$ads=cancha_ads_current(cancha_ads_fallback_slot($slot),$competition,$limit);
+     if(!$ads)return '';
+     $html='<aside class="cancha-ad-zone" aria-label="Espacios publicitarios"><div class="cancha-ad-heading">Publicidad</div><div class="cancha-ad-items">';
+     foreach($ads as $ad){
+@@ -100,7 +106,7 @@ add_shortcode('cancha_ads',function($atts){
+     $a=shortcode_atts(['slot'=>'home_mid','campeonato'=>0,'limit'=>4],$atts,'cancha_ads');
+     return cancha_ads_html(sanitize_key($a['slot']),absint($a['campeonato']),absint($a['limit']));
+ });
+-foreach(['home_top','home_mid','home_bottom','footer','club','player','news_feed','search'] as $slot){
++foreach(['home_top','home_mid','home_bottom','footer','club','player','news_feed','search','partidos','amateur','predicciones'] as $slot){
+     add_action('cancha_ads_'.$slot,static function()use($slot){echo cancha_ads_html($slot);});
+ }
+ add_action('cancha_render_campeonato_detalle',function($id){echo cancha_ads_html('championship',absint($id));},30);
+diff --git a/plugins/cancha-campeonatos/assets/amateur.css b/plugins/cancha-campeonatos/assets/amateur.css
+new file mode 100644
+index 0000000..f83b9b2
+--- /dev/null
++++ b/plugins/cancha-campeonatos/assets/amateur.css
+@@ -0,0 +1,46 @@
++/* CANCHA Amateur 0.5.0 — experiencia propia (tarjetas, zonas, jornadas, llaves) */
++.cancha-am-hub{display:flex;flex-direction:column;gap:16px}
++.cancha-am-hero{padding:22px 18px;border-radius:20px;background:linear-gradient(135deg,#5b21b6,#7c3aed 55%,#a855f7);color:#fff}
++.cancha-am-hero .eyebrow{color:#e9d5ff}.cancha-am-hero h1{margin:6px 0;color:#fff}.cancha-am-hero p{margin:0;color:#f3e8ff}.cancha-am-hero a{color:#fff;text-decoration:underline}
++.cancha-am-section h2,.cancha-am-panel h2{font-size:17px;margin:14px 0 8px}
++.cancha-am-grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
++.cancha-am-card{display:flex;align-items:center;gap:12px;padding:14px;border-radius:16px;background:var(--glass);border:1px solid var(--border);color:var(--text);box-shadow:var(--shadow)}
++.cancha-am-card img,.cancha-am-crest{width:52px;height:52px;border-radius:14px;object-fit:cover;flex:none;display:grid;place-items:center;background:#f3edff;font-size:26px}
++:root:not([data-theme=light]) .cancha-am-crest{background:rgba(168,85,247,.18)}
++.cancha-am-card-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
++.cancha-am-card-body strong{font-size:15px;line-height:1.25}.cancha-am-card-body small{color:var(--muted)}
++.cancha-am-metrics{font-size:12px;color:var(--muted)}.cancha-am-chev{font-size:22px;color:var(--muted)}
++.cancha-am-pill{display:inline-block;width:max-content;padding:2px 9px;border-radius:99px;font-size:11px;font-weight:800;background:var(--soft)}
++.cancha-am-pill.is-playing{background:rgba(24,215,122,.18);color:#0a7a45}.cancha-am-pill.is-finished{background:rgba(120,120,120,.18)}.cancha-am-pill.is-upcoming{background:rgba(124,58,237,.15);color:#6d28d9}
++:root:not([data-theme=light]) .cancha-am-pill.is-playing{color:#4ade80}:root:not([data-theme=light]) .cancha-am-pill.is-upcoming{color:#c4b5fd}
++.cancha-am-block{margin-bottom:12px}.cancha-am-block h3{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:10px 0 6px}
++.cancha-am-match{padding:10px 12px;border-radius:14px;background:var(--glass);border:1px solid var(--border);margin-bottom:8px;border-left:4px solid #7c3aed}
++.cancha-am-match-main{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);grid-template-areas:"when when when" "home score away" "tag tag tag";gap:4px 10px;align-items:center;color:var(--text)}
++.cancha-am-when{grid-area:when;font-size:12px;color:var(--muted);font-weight:700}
++.cancha-am-team{font-weight:750;min-width:0;overflow-wrap:anywhere}.cancha-am-team.is-home{grid-area:home;text-align:right}.cancha-am-team.is-away{grid-area:away}
++.cancha-am-score{grid-area:score;min-width:46px;text-align:center;padding:3px 8px;border-radius:8px;background:var(--soft);font-variant-numeric:tabular-nums}
++.cancha-am-tag{grid-area:tag;font-size:11px;color:#7c3aed;font-weight:700}
++.cancha-am-thead{display:flex;gap:14px;align-items:center;padding:16px;border-radius:18px;margin-bottom:10px}
++.cancha-am-thead img{width:64px;height:64px;border-radius:16px;object-fit:cover}.cancha-am-thead h1{margin:2px 0 6px;font-size:22px}
++.cancha-am-back{font-size:12px;color:var(--muted);font-weight:700}
++.cancha-am-tabs{display:flex;gap:6px;overflow-x:auto;padding:4px 2px 8px;scrollbar-width:none;position:sticky;top:0;z-index:5}
++.cancha-am-tabs a{flex:none;padding:8px 14px;border-radius:99px;background:var(--glass);border:1px solid var(--border);font-weight:750;font-size:13px;color:var(--text)}
++.cancha-am-tabs a.is-active{background:#7c3aed;border-color:#7c3aed;color:#fff}
++.cancha-am-panel{padding:14px;border-radius:18px}
++.cancha-am-rounds{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px}
++.cancha-am-rounds a{flex:none;min-width:44px;text-align:center;padding:7px 10px;border-radius:10px;border:1px solid var(--border);font-weight:800;font-size:13px}
++.cancha-am-rounds a.is-active{background:var(--text);color:var(--bg)}
++.cancha-am-table h3{margin:14px 0 6px;font-size:15px}.cancha-am-table th a{color:inherit}
++.cancha-am-note{font-size:12px;color:var(--muted)}
++.cancha-am-cup h3{font-size:16px;margin:12px 0}
++.cancha-am-bracket{display:flex;gap:12px;overflow-x:auto;padding-bottom:8px}
++.cancha-am-bracket-col{flex:none;width:210px;display:flex;flex-direction:column;justify-content:space-around;gap:10px}
++.cancha-am-bracket-col h4{margin:0;font-size:12px;color:var(--muted);text-transform:uppercase}
++.cancha-am-tie{display:flex;flex-direction:column;padding:8px 10px;border-radius:12px;background:var(--glass-strong);border:1px solid var(--border);color:var(--text);font-size:13px}
++.cancha-am-tie span{display:flex;justify-content:space-between;gap:8px}.cancha-am-tie .is-winner{font-weight:800}.cancha-am-tie small{color:var(--muted);font-size:11px;margin-top:3px}
++.cancha-am-teams{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
++.cancha-am-team-card{display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px;border-radius:14px;background:var(--glass-strong);border:1px solid var(--border);text-align:center;color:var(--text)}
++.cancha-am-team-card img{width:48px;height:48px;border-radius:12px;object-fit:cover}.cancha-am-team-card>span{font-size:30px}.cancha-am-team-card small{color:var(--muted)}
++.cancha-am-squad{border:1px solid var(--border);border-radius:12px;padding:10px 12px;margin-bottom:8px;background:var(--glass-strong)}
++.cancha-am-squad summary{cursor:pointer;font-weight:800}.cancha-am-squad summary small{color:var(--muted);font-weight:600}
++.cancha-am-squad ul{list-style:none;padding:0;margin:8px 0 0;display:grid;gap:4px}.cancha-am-squad li a{display:flex;gap:8px;color:var(--text)}.cancha-am-squad li small{color:var(--muted)}
+diff --git a/plugins/cancha-campeonatos/cancha-campeonatos.php b/plugins/cancha-campeonatos/cancha-campeonatos.php
+index e8e9a52..2188eac 100644
+--- a/plugins/cancha-campeonatos/cancha-campeonatos.php
++++ b/plugins/cancha-campeonatos/cancha-campeonatos.php
+@@ -2,14 +2,15 @@
+ /**
+  * Plugin Name: CANCHA · Campeonatos
+  * Description: Campeonatos amateur, equipos, jornadas, resultados validados y tabla de posiciones. Se administra dentro de CANCHA.
+- * Version: 0.4.0
++ * Version: 0.5.0
+  * Requires at least: 6.4
+  * Requires PHP: 8.0
+  * Text Domain: cancha-campeonatos
+  * License: GPL-2.0-or-later
+  */
+ defined('ABSPATH') || exit;
+-define('CANCHA_COMP_VERSION','0.4.0');
++define('CANCHA_COMP_VERSION','0.5.0');
++define('CANCHA_COMP_FILE',__FILE__);
+ require_once __DIR__ . '/inc/rounds.php';
+ // New modules load after basic functions; their callbacks run once WordPress is initialized.
+ require_once __DIR__ . '/inc/people.php';
+@@ -18,6 +19,7 @@ require_once __DIR__ . '/inc/directory.php';
+ require_once __DIR__ . '/inc/import.php';
+ require_once __DIR__ . '/inc/matches-details.php';
+ require_once __DIR__ . '/inc/leaders.php';
++require_once __DIR__ . '/inc/amateur.php';
+ function cancha_comp_capabilities(){
+     $caps=['edit_post','delete_post','edit_posts','edit_others_posts','publish_posts','read_private_posts','delete_posts','delete_others_posts','delete_private_posts','delete_published_posts','edit_private_posts','edit_published_posts','create_posts'];
+     return array_fill_keys($caps,'manage_options') + ['read_post'=>'read'];
+@@ -148,6 +150,7 @@ function cancha_comp_standings($comp){
+     if(get_post_meta($comp,'_cancha_points_draw',true)==='')$draw=1;
+     foreach(cancha_comp_matches($comp) as $match){
+         if(get_post_meta($match->ID,'_cancha_result_status',true)!=='final')continue;
++        if(get_post_meta($match->ID,'_cancha_stage',true)==='ko')continue; // las eliminatorias no suman en la tabla
+         $home=absint(get_post_meta($match->ID,'_cancha_home',true));$away=absint(get_post_meta($match->ID,'_cancha_away',true));
+         if(!$home||!$away||$home===$away||!isset($table[$home],$table[$away]))continue;
+         $hs=cancha_comp_valid_score(get_post_meta($match->ID,'_cancha_home_score',true));$as=cancha_comp_valid_score(get_post_meta($match->ID,'_cancha_away_score',true));
+@@ -199,7 +202,7 @@ function cancha_comp_list_html(){
+ add_shortcode('cancha_tabla',function($atts){$a=shortcode_atts(['campeonato'=>0],$atts,'cancha_tabla');return cancha_comp_standings_html(absint($a['campeonato']));});
+ add_shortcode('cancha_partidos',function($atts){$a=shortcode_atts(['campeonato'=>0,'jornada'=>0],$atts,'cancha_partidos');return cancha_comp_fixture_html(absint($a['campeonato']),absint($a['jornada']));});
+ add_action('cancha_render_campeonatos',function(){echo cancha_comp_list_html();});
+-add_action('cancha_render_campeonato_detalle',function($comp){echo '<section class="cancha-competition-detail"><h2>Tabla de posiciones</h2>'.cancha_comp_standings_html($comp).'<h2>Jornadas y resultados</h2>'.cancha_comp_fixture_html($comp).'</section>';});
++// 0.5.0: la tabla y el fixture del torneo se muestran en las pestañas Zonas / Fixture (inc/amateur.php).
+ add_action('cancha_render_proximos_partidos',function(){
+     $all=[];
+     foreach(cancha_comp_matches(0,250) as $match){
+@@ -229,7 +232,7 @@ add_action('wp_enqueue_scripts',function(){wp_enqueue_style('cancha-competitions
+ add_filter('manage_cancha_partido_posts_columns',function($cols){$cols['cancha_match_info']='Jornada y marcador';return $cols;});
+ add_action('manage_cancha_partido_posts_custom_column',function($col,$id){
+  if($col==='cancha_match_info'){
+-    $st=get_post_meta($id,'_cancha_result_status',true);echo 'J'.absint(get_post_meta($id,'_cancha_round',true)).' · '.($st==='final'?'✅ Final':'🕓 Pendiente');
++    $st=get_post_meta($id,'_cancha_result_status',true);echo (get_post_meta($id,'_cancha_stage',true)==='ko'?esc_html(trim(ucfirst((string)get_post_meta($id,'_cancha_cup',true)).' '.(string)get_post_meta($id,'_cancha_ko_round',true))):'J'.absint(get_post_meta($id,'_cancha_round',true))).' · '.($st==='final'?'✅ Final':'🕓 Pendiente');
+  }
+ },10,2);
+ 
+diff --git a/plugins/cancha-campeonatos/inc/amateur.php b/plugins/cancha-campeonatos/inc/amateur.php
+new file mode 100644
+index 0000000..d23934c
+--- /dev/null
++++ b/plugins/cancha-campeonatos/inc/amateur.php
+@@ -0,0 +1,206 @@
++<?php
++/**
++ * CANCHA Amateur 0.5.0 — experiencia propia del fútbol amateur, separada del profesional.
++ * Torneo → zonas → fixture por jornada → eliminatorias (Copa Oro / Copa Plata) → equipos → jugadores.
++ * Datos aditivos: _cancha_zone (equipo), _cancha_stage / _cancha_cup / _cancha_ko_round (partido).
++ * Solo administradores editan (manage_options); el público únicamente consulta.
++ */
++defined('ABSPATH') || exit;
++
++function cancha_am_ko_rounds(){
++    return ['32avos'=>'32avos de final','16avos'=>'16avos de final','octavos'=>'Octavos de final','cuartos'=>'Cuartos de final','semifinal'=>'Semifinal','tercer'=>'Tercer puesto','final'=>'Final'];
++}
++function cancha_am_cups(){return [''=>'Eliminatoria','oro'=>'Copa Oro','plata'=>'Copa Plata'];}
++function cancha_am_team_zone($team){$z=(string)get_post_meta($team,'_cancha_zone',true);return preg_match('/^[A-Za-z0-9 ]{1,12}$/',$z)?strtoupper(trim($z)):'';}
++function cancha_am_is_ko($match){return get_post_meta(is_object($match)?$match->ID:$match,'_cancha_stage',true)==='ko';}
++
++/* ---------- Escritorio (solo administradores) ---------- */
++add_action('add_meta_boxes',function(){
++    add_meta_box('cancha_am_zone','Zona del equipo','cancha_am_zone_box','cancha_equipo','side');
++    add_meta_box('cancha_am_stage','Fase del partido (zonas o eliminatoria)','cancha_am_stage_box','cancha_partido','side');
++});
++function cancha_am_zone_box($post){
++    wp_nonce_field('cancha_am_save','cancha_am_nonce');
++    echo '<p><label for="cancha_zone">Zona / grupo</label><br><input id="cancha_zone" name="cancha_zone" maxlength="12" pattern="[A-Za-z0-9 ]{0,12}" value="'.esc_attr(cancha_am_team_zone($post->ID)).'" placeholder="A"></p><p class="description">Ej.: A, B, C. Vacío = tabla única.</p>';
++}
++function cancha_am_stage_box($post){
++    wp_nonce_field('cancha_am_save','cancha_am_nonce');
++    $stage=get_post_meta($post->ID,'_cancha_stage',true)==='ko'?'ko':'';
++    $cup=(string)get_post_meta($post->ID,'_cancha_cup',true);$round=(string)get_post_meta($post->ID,'_cancha_ko_round',true);
++    echo '<p><label>Fase<br><select name="cancha_stage"><option value="">Fase de zonas / regular (suma en la tabla)</option><option value="ko" '.selected($stage,'ko',false).'>Eliminatoria (no suma en la tabla)</option></select></label></p>';
++    echo '<p><label>Copa<br><select name="cancha_cup">';foreach(cancha_am_cups() as $k=>$l)echo '<option value="'.esc_attr($k).'" '.selected($cup,$k,false).'>'.esc_html($l).'</option>';echo '</select></label></p>';
++    echo '<p><label>Instancia<br><select name="cancha_ko_round"><option value="">—</option>';foreach(cancha_am_ko_rounds() as $k=>$l)echo '<option value="'.esc_attr($k).'" '.selected($round,$k,false).'>'.esc_html($l).'</option>';echo '</select></label></p>';
++}
++function cancha_am_can_save($id){
++    if((defined('DOING_AUTOSAVE')&&DOING_AUTOSAVE)||wp_is_post_revision($id)||!current_user_can('manage_options'))return false;
++    return isset($_POST['cancha_am_nonce'])&&wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['cancha_am_nonce'])),'cancha_am_save');
++}
++add_action('save_post_cancha_equipo',function($id){
++    if(!cancha_am_can_save($id))return;
++    $z=strtoupper(trim(sanitize_text_field(wp_unslash($_POST['cancha_zone']??''))));
++    if($z===''||preg_match('/^[A-Z0-9 ]{1,12}$/',$z))update_post_meta($id,'_cancha_zone',$z);
++},20);
++add_action('save_post_cancha_partido',function($id){
++    if(!cancha_am_can_save($id))return;
++    $stage=($_POST['cancha_stage']??'')==='ko'?'ko':'';
++    $cup=sanitize_key(wp_unslash($_POST['cancha_cup']??''));if(!isset(cancha_am_cups()[$cup]))$cup='';
++    $round=sanitize_key(wp_unslash($_POST['cancha_ko_round']??''));if(!isset(cancha_am_ko_rounds()[$round]))$round='';
++    update_post_meta($id,'_cancha_stage',$stage);
++    update_post_meta($id,'_cancha_cup',$stage?$cup:'');
++    update_post_meta($id,'_cancha_ko_round',$stage?$round:'');
++},20);
++
++/* ---------- Datos ---------- */
++function cancha_am_match_data($m){
++    $id=$m->ID;$h=absint(get_post_meta($id,'_cancha_home',true));$a=absint(get_post_meta($id,'_cancha_away',true));
++    return ['id'=>$id,'home'=>$h,'away'=>$a,'round'=>max(1,absint(get_post_meta($id,'_cancha_round',true))),'start'=>(string)get_post_meta($id,'_cancha_start',true),
++        'final'=>get_post_meta($id,'_cancha_result_status',true)==='final','hs'=>get_post_meta($id,'_cancha_home_score',true),'as'=>get_post_meta($id,'_cancha_away_score',true),
++        'ko'=>cancha_am_is_ko($id),'cup'=>(string)get_post_meta($id,'_cancha_cup',true),'ko_round'=>(string)get_post_meta($id,'_cancha_ko_round',true)];
++}
++/** Tablas por zona: solo partidos de fase regular, entre equipos de la misma zona del torneo. */
++function cancha_am_zone_tables($comp){
++    $rows=cancha_comp_standings($comp); // ya excluye eliminatorias (ver cancha_comp_standings)
++    $zones=[];
++    foreach($rows as $r){$zones[cancha_am_team_zone($r['id'])][]=$r;}
++    ksort($zones,SORT_NATURAL);
++    return $zones;
++}
++
++/* ---------- Componentes públicos ---------- */
++function cancha_am_date_label($start){
++    if(!preg_match('/^20\d{2}-\d{2}-\d{2}T\d{2}:\d{2}$/',$start))return 'A confirmar';
++    $d=DateTimeImmutable::createFromFormat('!Y-m-d\TH:i',$start,wp_timezone());
++    return $d?wp_date('D j M · H:i',$d->getTimestamp()):'A confirmar';
++}
++function cancha_am_match_row($m){
++    $d=is_array($m)?$m:cancha_am_match_data($m);if(!$d['home']||!$d['away'])return '';
++    $score=$d['final']&&is_numeric($d['hs'])&&is_numeric($d['as'])?absint($d['hs']).' - '.absint($d['as']):'vs';
++    $hz=cancha_am_team_zone($d['home']);
++    $out='<article class="cancha-am-match'.($d['final']?' is-final':'').'" data-origin="amateur"><a class="cancha-am-match-main" href="'.esc_url(get_permalink($d['id'])).'">';
++    $out.='<span class="cancha-am-when">'.($d['final']?'Final':esc_html(cancha_am_date_label($d['start']))).'</span>';
++    $out.='<span class="cancha-am-team is-home">'.esc_html(get_the_title($d['home'])).'</span><strong class="cancha-am-score">'.esc_html($score).'</strong><span class="cancha-am-team is-away">'.esc_html(get_the_title($d['away'])).'</span>';
++    if($hz && !$d['ko'])$out.='<span class="cancha-am-tag">Zona '.esc_html($hz).'</span>';
++    $out.='</a>';
++    if(function_exists('cancha_pred_amateur_inline'))$out.=cancha_pred_amateur_inline($d['id']);
++    return $out.'</article>';
++}
++function cancha_am_table_html($rows,$title=''){
++    if(!$rows)return '';
++    $h='<div class="cancha-am-table">'.($title?'<h3>'.esc_html($title).'</h3>':'').'<div class="cancha-standings-wrap"><table class="cancha-standings"><thead><tr><th>#</th><th>Equipo</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>DG</th><th>Pts</th></tr></thead><tbody>';
++    foreach($rows as $i=>$r){$h.='<tr><td>'.($i+1).'</td><th scope="row"><a href="'.esc_url(get_permalink($r['id'])).'">'.esc_html($r['name']).'</a></th>';foreach(['pj','g','e','p','dg','pts'] as $f)$h.='<td>'.esc_html($r[$f]).'</td>';$h.='</tr>';}
++    return $h.'</tbody></table></div></div>';
++}
++function cancha_am_bracket_html($ko,$cup_label){
++    $order=array_keys(cancha_am_ko_rounds());$by=[];
++    foreach($ko as $d){$by[$d['ko_round']?:'final'][]=$d;}
++    uksort($by,static function($a,$b)use($order){return array_search($a,$order,true)<=>array_search($b,$order,true);});
++    $h='<section class="cancha-am-cup"><h3>'.esc_html($cup_label).'</h3><div class="cancha-am-bracket">';
++    foreach($by as $r=>$list){
++        $h.='<div class="cancha-am-bracket-col"><h4>'.esc_html(cancha_am_ko_rounds()[$r]??$r).'</h4>';
++        foreach($list as $d){$w=0;if($d['final']&&is_numeric($d['hs'])&&is_numeric($d['as'])){$w=(int)$d['hs']>(int)$d['as']?$d['home']:((int)$d['hs']<(int)$d['as']?$d['away']:0);}
++            $h.='<a class="cancha-am-tie" href="'.esc_url(get_permalink($d['id'])).'"><span class="'.($w===$d['home']?'is-winner':'').'">'.esc_html(get_the_title($d['home'])).'<b>'.($d['final']?absint($d['hs']):'').'</b></span><span class="'.($w===$d['away']?'is-winner':'').'">'.esc_html(get_the_title($d['away'])).'<b>'.($d['final']?absint($d['as']):'').'</b></span><small>'.esc_html($d['final']?'Final':cancha_am_date_label($d['start'])).'</small></a>';}
++        $h.='</div>';
++    }
++    return $h.'</div></section>';
++}
++function cancha_am_status($comp,$matches){
++    $fin=0;foreach($matches as $m)if(get_post_meta($m->ID,'_cancha_result_status',true)==='final')$fin++;
++    if(get_post_meta($comp,'_cancha_tournament_status',true)==='finished')return ['Finalizado','finished',$fin];
++    return $fin?['En juego','playing',$fin]:['Próximamente','upcoming',$fin];
++}
++
++/** Página /amateur/: tarjetas de torneos + próximos partidos amateur (nunca profesionales). */
++function cancha_amateur_hub_html(){
++    $comps=cancha_comp_tournaments();
++    $h='<div class="cancha-am-hub" data-origin="amateur"><header class="cancha-am-hero"><span class="eyebrow">FÚTBOL AMATEUR</span><h1>Torneos de CANCHA</h1><p>Zonas, fixture por jornada, tablas, eliminatorias, clubes y planteles. Los partidos profesionales están en <a href="'.esc_url(cancha_route('partidos')).'">Partidos</a>.</p></header>';
++    if(has_action('cancha_ads_amateur')){ob_start();do_action('cancha_ads_amateur');$h.=ob_get_clean();}
++    if(!$comps)return $h.'<div class="module-empty">Todavía no hay torneos publicados. Los administran los organizadores desde el escritorio.</div></div>';
++    $h.='<section class="cancha-am-section"><h2>Torneos</h2><div class="cancha-am-grid">';
++    foreach($comps as $c){
++        $matches=cancha_comp_matches($c->ID,1000);$teams=cancha_comp_teams($c->ID);[$st,$cls,$fin]=cancha_am_status($c->ID,$matches);
++        $zones=[];$rounds=[];$ko=0;foreach($teams as $t){$z=cancha_am_team_zone($t->ID);if($z)$zones[$z]=1;}
++        foreach($matches as $m){if(cancha_am_is_ko($m))$ko++;else $rounds[absint(get_post_meta($m->ID,'_cancha_round',true))]=1;}
++        $img=get_the_post_thumbnail_url($c,'thumbnail');$cat=(string)get_post_meta($c->ID,'_cancha_category',true);
++        $h.='<a class="cancha-am-card" href="'.esc_url(get_permalink($c)).'">'.($img?'<img src="'.esc_url($img).'" alt="" loading="lazy">':'<span class="cancha-am-crest" aria-hidden="true">🏆</span>');
++        $h.='<span class="cancha-am-card-body"><strong>'.esc_html(get_the_title($c)).'</strong>'.($cat?'<small>'.esc_html($cat).'</small>':'').'<span class="cancha-am-pill is-'.esc_attr($cls).'">'.esc_html($st).'</span>';
++        $h.='<span class="cancha-am-metrics">'.count($teams).' equipos · '.($zones?count($zones).' zonas · ':'').count($rounds).' jornadas'.($ko?' · eliminatorias':'').'</span>';
++        $total=count($matches);$h.='<span class="ligas-progress" aria-label="'.absint($fin).' de '.absint($total).' partidos jugados"><span style="width:'.esc_attr((string)($total?round($fin*100/$total):0)).'%"></span></span></span><span aria-hidden="true" class="cancha-am-chev">›</span></a>';
++    }
++    $h.='</div></section>';
++    // Próximos partidos amateur
++    $now=wp_date('Y-m-d\TH:i');$next=get_posts(['post_type'=>'cancha_partido','post_status'=>'publish','numberposts'=>12,'meta_key'=>'_cancha_start','orderby'=>'meta_value','order'=>'ASC','meta_query'=>[['key'=>'_cancha_start','value'=>$now,'compare'=>'>=']]]);
++    $h.='<section class="cancha-am-section"><h2>Próximos partidos amateur</h2>';
++    if(function_exists('cancha_pred_user_allowed')&&!cancha_pred_user_allowed())$h.='<a class="cancha-pred-cta" href="'.esc_url(add_query_arg('tipo','amateur',cancha_route('predicciones'))).'"><span aria-hidden="true">🎯</span><span>Pronosticá 1 · X · 2 los partidos amateur</span><span aria-hidden="true">›</span></a>';
++    if(!$next)$h.='<div class="module-empty">No hay partidos amateur programados.</div>';
++    else{$group=[];foreach($next as $m)$group[absint(get_post_meta($m->ID,'_cancha_comp_id',true))][]=$m;
++        foreach($group as $cid=>$list){$h.='<div class="cancha-am-block"><h3><a href="'.esc_url(get_permalink($cid)).'">'.esc_html(get_the_title($cid)).'</a></h3>';foreach($list as $m)$h.=cancha_am_match_row($m);$h.='</div>';}}
++    return $h.'</section></div>';
++}
++add_action('cancha_render_amateur',function(){echo cancha_amateur_hub_html();});
++add_shortcode('cancha_amateur',function(){return cancha_amateur_hub_html();});
++
++/** Ficha del torneo con pestañas: Resumen · Fixture · Zonas · Eliminatorias · Equipos · Jugadores. */
++function cancha_amateur_tournament_html($comp){
++    $comp=absint($comp);$url=get_permalink($comp);
++    $tabs=['resumen'=>'Resumen','fixture'=>'Fixture','zonas'=>'Zonas','eliminatorias'=>'Eliminatorias','equipos'=>'Equipos','jugadores'=>'Jugadores'];
++    $view=sanitize_key(wp_unslash($_GET['vista']??'resumen'));if(!isset($tabs[$view]))$view='resumen';
++    $matches=array_map('cancha_am_match_data',cancha_comp_matches($comp,2000));
++    $regular=array_values(array_filter($matches,static function($d){return !$d['ko'];}));
++    $ko=array_values(array_filter($matches,static function($d){return $d['ko'];}));
++    $teams=cancha_comp_teams($comp);[$st,$cls]=cancha_am_status($comp,cancha_comp_matches($comp,2000));
++    $img=get_the_post_thumbnail_url($comp,'medium');
++    $h='<header class="cancha-am-thead glass">'.($img?'<img src="'.esc_url($img).'" alt="">':'<span class="cancha-am-crest" aria-hidden="true">🏆</span>').'<div><a class="cancha-am-back" href="'.esc_url(cancha_route('amateur')).'">‹ Fútbol amateur</a><h1>'.esc_html(get_the_title($comp)).'</h1><span class="cancha-am-pill is-'.esc_attr($cls).'">'.esc_html($st).'</span> <small>'.count($teams).' equipos · '.count($matches).' partidos</small></div></header>';
++    $h.='<nav class="cancha-am-tabs" aria-label="Secciones del torneo">';
++    foreach($tabs as $k=>$l)$h.='<a href="'.esc_url($k==='resumen'?$url:add_query_arg('vista',$k,$url)).'"'.($k===$view?' aria-current="page" class="is-active"':'').'>'.esc_html($l).'</a>';
++    $h.='</nav><div class="cancha-am-panel glass">';
++    if($view==='resumen'){
++        $content=apply_filters('the_content',get_post_field('post_content',$comp));if(trim(wp_strip_all_tags($content)))$h.='<div class="entry-content">'.$content.'</div>';
++        $up=array_values(array_filter($matches,static function($d){return !$d['final'];}));usort($up,static function($a,$b){return strcmp($a['start'],$b['start']);});
++        $last=array_values(array_filter($matches,static function($d){return $d['final'];}));usort($last,static function($a,$b){return strcmp($b['start'],$a['start']);});
++        $h.='<h2>Próximos partidos</h2>'.($up?implode('',array_map('cancha_am_match_row',array_slice($up,0,5))):'<div class="module-empty">Sin partidos programados.</div>');
++        $h.='<h2>Últimos resultados</h2>'.($last?implode('',array_map('cancha_am_match_row',array_slice($last,0,5))):'<div class="module-empty">Todavía no hay resultados validados.</div>');
++        ob_start();
++        // Otros módulos (datos del torneo, avisos de jornada, publicidad) siguen enganchados.
++        if(has_action('cancha_render_campeonato_detalle'))do_action('cancha_render_campeonato_detalle',$comp);
++        $h.=ob_get_clean();
++    }elseif($view==='fixture'){
++        $rounds=[];foreach($regular as $d)$rounds[$d['round']][]=$d;ksort($rounds);
++        if(!$rounds){$h.='<div class="module-empty">El fixture de la fase regular todavía no fue publicado.</div>';}
++        else{
++            $sel=absint($_GET['jornada']??0);
++            if(!$sel||!isset($rounds[$sel])){$sel=array_key_first($rounds);foreach($rounds as $r=>$list){foreach($list as $d){if(!$d['final']){$sel=$r;break 2;}}$sel=$r;}}
++            $h.='<nav class="cancha-am-rounds" aria-label="Jornadas">';
++            foreach(array_keys($rounds) as $r)$h.='<a href="'.esc_url(add_query_arg(['vista'=>'fixture','jornada'=>$r],$url)).'"'.($r===$sel?' aria-current="true" class="is-active"':'').'>J'.absint($r).'</a>';
++            $h.='</nav><h2>Jornada '.absint($sel).'</h2>';
++            usort($rounds[$sel],static function($a,$b){return strcmp($a['start'],$b['start']);});
++            foreach($rounds[$sel] as $d)$h.=cancha_am_match_row($d);
++        }
++    }elseif($view==='zonas'){
++        $zones=cancha_am_zone_tables($comp);
++        if(!$zones)$h.='<div class="module-empty">Todavía no hay equipos publicados.</div>';
++        foreach($zones as $z=>$rows)$h.=cancha_am_table_html($rows,$z!==''?'Zona '.$z:(count($zones)>1?'Sin zona asignada':'Tabla de posiciones'));
++        $h.='<p class="cancha-am-note">Solo cuentan partidos de fase regular con resultado validado. Desempate: puntos, diferencia de gol, goles a favor.</p>';
++    }elseif($view==='eliminatorias'){
++        if(!$ko)$h.='<div class="module-empty">Las eliminatorias (Copa Oro / Copa Plata) se publicarán al terminar la fase de zonas.</div>';
++        else{$cups=[];foreach($ko as $d)$cups[$d['cup']][]=$d;foreach(['oro','plata',''] as $c)if(!empty($cups[$c]))$h.=cancha_am_bracket_html($cups[$c],cancha_am_cups()[$c]);}
++    }elseif($view==='equipos'){
++        if(!$teams)$h.='<div class="module-empty">Sin equipos publicados.</div>';
++        $byz=[];foreach($teams as $t)$byz[cancha_am_team_zone($t->ID)][]=$t;ksort($byz,SORT_NATURAL);
++        foreach($byz as $z=>$list){$h.=($z!==''?'<h2>Zona '.esc_html($z).'</h2>':'').'<div class="cancha-am-teams">';
++            foreach($list as $t){$logo=get_the_post_thumbnail_url($t,'thumbnail');$n=count(cancha_people_all('cancha_jugador','team',$t->ID,500));
++                $h.='<a class="cancha-am-team-card" href="'.esc_url(get_permalink($t)).'">'.($logo?'<img src="'.esc_url($logo).'" alt="" loading="lazy">':'<span aria-hidden="true">🛡</span>').'<strong>'.esc_html(get_the_title($t)).'</strong><small>'.absint($n).' jugadores</small></a>';}
++            $h.='</div>';}
++    }else{
++        if(function_exists('cancha_comp_leaders_html'))$h.='<h2>Goleadores y disciplina</h2>'.cancha_comp_leaders_html($comp);
++        $h.='<h2>Planteles</h2>';
++        foreach($teams as $t){$players=cancha_people_all('cancha_jugador','team',$t->ID,500);if(!$players)continue;
++            $h.='<details class="cancha-am-squad"><summary>'.esc_html(get_the_title($t)).' <small>'.count($players).' jugadores</small></summary><ul>';
++            foreach($players as $p){$num=(string)get_post_meta($p->ID,'_cancha_number',true);$pos=(string)get_post_meta($p->ID,'_cancha_position',true);
++                $h.='<li><a href="'.esc_url(get_permalink($p)).'"><b>'.esc_html($num!==''?$num:'–').'</b> '.esc_html(get_the_title($p)).' <small>'.esc_html($pos).'</small></a></li>';}
++            $h.='</ul></details>';}
++    }
++    return $h.'</div>';
++}
++add_action('wp_enqueue_scripts',function(){
++    wp_enqueue_style('cancha-amateur',plugins_url('assets/amateur.css',CANCHA_COMP_FILE),[],CANCHA_COMP_VERSION);
++},30);
+diff --git a/plugins/cancha-campeonatos/inc/directory.php b/plugins/cancha-campeonatos/inc/directory.php
+index 7aa07c7..7a2f3e6 100644
+--- a/plugins/cancha-campeonatos/inc/directory.php
++++ b/plugins/cancha-campeonatos/inc/directory.php
+@@ -45,7 +45,7 @@ function cancha_comp_profile_extra_html($comp){
+  $html='<section class="cancha-profile-section"><h2>Ficha del campeonato</h2>';
+  $html.=cancha_profile_facts(['Categoría y modalidad'=>cancha_person_field($comp,'category'),'Localidad'=>cancha_person_field($comp,'location'),'Organizador'=>cancha_person_field($comp,'organizer'),'Inicio'=>cancha_person_field($comp,'start_date'),'Finalización'=>cancha_person_field($comp,'end_date'),'Formato'=>cancha_person_field($comp,'format')]);
+  $url=cancha_person_field($comp,'regulation_url');if($url)$html.='<p><a href="'.esc_url($url).'" rel="noopener noreferrer" target="_blank">Consultar reglamento oficial ↗</a></p>';
+- $html.='</section><section class="cancha-profile-section"><h2>Equipos participantes</h2>'.cancha_people_cards(cancha_comp_teams($comp),'Equipo').'</section>';
++ $html.='</section>'; // 0.5.0: equipos participantes en la pestaña «Equipos».
+  $html.='<section class="cancha-profile-section"><h2>Directiva del campeonato</h2>'.cancha_people_cards(cancha_people_members('cancha_staff','competition',$comp),'Directiva').'</section>';
+  $html.='<section class="cancha-profile-section"><h2>Últimos campeones</h2>'.cancha_champions_html($comp).'</section>';
+  return $html;
+diff --git a/plugins/cancha-campeonatos/inc/leaders.php b/plugins/cancha-campeonatos/inc/leaders.php
+index 78cdf18..d667802 100644
+--- a/plugins/cancha-campeonatos/inc/leaders.php
++++ b/plugins/cancha-campeonatos/inc/leaders.php
+@@ -27,5 +27,5 @@ function cancha_comp_leaders_html($competition,$limit=10){
+  $html.='</tr>';}
+  return $html.'</tbody></table></div>';
+ }
+-add_action('cancha_render_campeonato_detalle',function($comp){echo '<section class="cancha-profile-section"><h2>Goleadores y disciplina</h2>'.cancha_comp_leaders_html(absint($comp)).'</section>';},16);
++// 0.5.0: goleadores en la pestaña «Jugadores» del torneo (inc/amateur.php).
+ add_shortcode('cancha_goleadores',function($atts){$a=shortcode_atts(['campeonato'=>0,'limite'=>10],$atts,'cancha_goleadores');return cancha_comp_leaders_html(absint($a['campeonato']),absint($a['limite']));});
+diff --git a/plugins/cancha-futbol-oficial/cancha-futbol-oficial.php b/plugins/cancha-futbol-oficial/cancha-futbol-oficial.php
+index 96a7beb..722d9ff 100644
+--- a/plugins/cancha-futbol-oficial/cancha-futbol-oficial.php
++++ b/plugins/cancha-futbol-oficial/cancha-futbol-oficial.php
+@@ -2,7 +2,7 @@
+ /**
+  * Plugin Name: CANCHA Fútbol Oficial
+  * Description: Resultados, fixture y posiciones de torneos oficiales en CANCHA mediante API-Football o TheSportsDB. No modifica campeonatos amateur.
+- * Version: 1.1.0
++ * Version: 1.2.3
+  * Requires at least: 6.2
+  * Requires PHP: 7.4
+  * Author: CANCHA
+@@ -10,7 +10,7 @@
+  * Text Domain: cancha-oficial
+  */
+ if (!defined('ABSPATH')) exit;
+-define('COF_VERSION', '1.1.0');
++define('COF_VERSION', '1.2.3');
+ define('COF_PATH', plugin_dir_path(__FILE__));
+ define('COF_URL', plugin_dir_url(__FILE__));
+ require_once COF_PATH . 'includes/settings.php';
+@@ -31,6 +31,7 @@ add_action('cof_refresh_event', function(){
+     foreach(cof_competitions() as $code=>$name) {
+         if (!cof_provider_id($code))continue;
+         if (cof_settings()['provider']==='api-football' && !cof_key())break;
++        if (cof_settings()['provider']==='thesportsdb') cof_tsdb_window($code,true);
+         cof_get_fixtures($code);
+         cof_get_standings($code);
+     }
+diff --git a/plugins/cancha-futbol-oficial/includes/calendar.php b/plugins/cancha-futbol-oficial/includes/calendar.php
+index 0bff6ef..b2a8e8a 100644
+--- a/plugins/cancha-futbol-oficial/includes/calendar.php
++++ b/plugins/cancha-futbol-oficial/includes/calendar.php
+@@ -2,29 +2,41 @@
+ /** Read-only, date-scoped fixture adapter. No writes to amateur competitions. */
+ defined('ABSPATH') || exit;
+ function cof_calendar_key($comp, $day) {
+-    return 'cof_day_' . md5(cof_cache_key($comp,'fixtures') . '|' . $day);
++    return 'cof_day_' . md5(cof_cache_key($comp,'fixtures') . '|' . $day . '|' . wp_timezone_string());
+ }
+ function cof_calendar_validate_day($day) {
+     if (!is_string($day) || !preg_match('/^20\d{2}-\d{2}-\d{2}$/D', $day)) return false;
+     $parsed=DateTimeImmutable::createFromFormat('!Y-m-d',$day,wp_timezone());
+     return $parsed && $parsed->format('Y-m-d')===$day;
+ }
++function cof_local_day($raw){
++    $raw=(string)$raw;
++    if(preg_match('/^20\d{2}-\d{2}-\d{2}$/',$raw))return $raw;
++    try{$d=new DateTimeImmutable($raw);}catch(Exception $e){return '';}
++    return $d->setTimezone(wp_timezone())->format('Y-m-d');
++}
+ /** A one-day query increases the useful range without pretending a free plan has a complete fixture. */
+ function cof_get_calendar_day($comp,$day,$force=false){
+     if(!isset(cof_competitions()[$comp]) || !cof_calendar_validate_day($day))return new WP_Error('cof_calendar_day','Fecha o liga incorrecta.');
+     if(!cof_provider_id($comp))return new WP_Error('cof_calendar_id','El proveedor no tiene un ID configurado para esta liga.');
+     $key=cof_calendar_key($comp,$day);
+     if(!$force){$cached=get_transient($key);if(is_array($cached))return $cached;}
++    $win=null;$raw=null;
+     $settings=cof_settings();
+     if($settings['provider']==='api-football'){
+         $raw=cof_http('fixtures',['league'=>cof_provider_id($comp),'season'=>(int)cof_season(),'date'=>$day,'timezone'=>$settings['timezone']]);
+         if(is_wp_error($raw))return $raw;
+         $matches=cof_parse_api_matches($raw);
+     }else{
+-        // Free eventsday is limited (often up to 3 records), even with a league filter.
+-        $raw=cof_http('eventsday.php',['d'=>$day,'s'=>'Soccer','l'=>cof_provider_id($comp)]);
+-        if(is_wp_error($raw))return $raw;
+-        $matches=cof_parse_tsdb_matches($raw);
++        // Free eventsday is limited (often up to 3 records): merge with the full-round window and
++        // keep only matches whose kickoff falls on this day in the site timezone.
++        $win=cof_tsdb_window($comp,$force);
++        // eventsday only as a fallback when the full-round window is unavailable.
++        $raw=is_wp_error($win)?cof_http('eventsday.php',['d'=>$day,'s'=>'Soccer','l'=>cof_provider_id($comp)]):null;
++        if(is_wp_error($raw)&&is_wp_error($win))return $raw;
++        if(!is_wp_error($win) && !empty($win['partial_fail']))$raw=new WP_Error('cof_partial','');
++        $matches=array_merge(is_wp_error($win)?[]:$win['matches'],is_array($raw)?cof_parse_tsdb_matches($raw):[]);
++        $matches=array_values(array_filter($matches,static function($m)use($day){return cof_local_day($m['date']??'')===$day;}));
+     }
+     $unique=[];
+     foreach($matches as $m){
+@@ -32,8 +44,9 @@ function cof_get_calendar_day($comp,$day,$force=false){
+         $k=$id && $id!=='0'?$id:md5(($m['home']??'').'|'.($m['away']??'').'|'.($m['date']??''));
+         $unique[$k]=$m;
+     }
++    usort($unique,static function($a,$b){return strcmp((string)$a['date'],(string)$b['date']);});
+     $out=['matches'=>array_values($unique),'fetched'=>time(),'provider'=>$settings['provider'],'partial'=>true,'day'=>$day];
+-    set_transient($key,$out,45*MINUTE_IN_SECONDS);
++    set_transient($key,$out,(is_wp_error($win)||is_wp_error($raw))?5*MINUTE_IN_SECONDS:30*MINUTE_IN_SECONDS);
+     if(function_exists('cancha_pred_official_reconcile_payload'))cancha_pred_official_reconcile_payload($comp,$out);
+     return $out;
+ }
+diff --git a/plugins/cancha-futbol-oficial/includes/providers.php b/plugins/cancha-futbol-oficial/includes/providers.php
+index 704fa52..9e4621c 100644
+--- a/plugins/cancha-futbol-oficial/includes/providers.php
++++ b/plugins/cancha-futbol-oficial/includes/providers.php
+@@ -6,13 +6,15 @@ function cof_provider_id($comp) {
+ }
+ function cof_cache_key($comp,$kind) {
+     $s=cof_settings();
+-    $parts=[$comp,$kind,$s['provider'],cof_provider_id($comp),cof_season(),$s['timezone']];
++    // 'v120' namespaces caches built after the UTC timestamp fix; old transients simply expire.
++    $parts=['v120',$comp,$kind,$s['provider'],cof_provider_id($comp),cof_season(),$s['timezone']];
+     // Key rotation invalidates cached data for a previous API account.
+     if($s['provider']==='api-football')$parts[]=hash('sha256',cof_key());
+     return 'cof_'.md5(implode('|',$parts));
+ }
+ function cof_purge($comp){
+     foreach(['fixtures','standings'] as $kind){$key=cof_cache_key($comp,$kind);delete_transient($key);delete_transient($key.'_fail');}
++    delete_transient('cof_win_'.md5(cof_cache_key($comp,'window')));
+ }
+ function cof_check_budget(){
+     $today=gmdate('Y-m-d');$record=(array)get_option('cof_budget',[]);
+@@ -33,8 +35,12 @@ function cof_http($endpoint,$query=[]) {
+         $headers=['x-apisports-key'=>$secret,'Accept'=>'application/json'];
+         $guard=cof_check_budget();if(is_wp_error($guard))return $guard;
+     } else {
+-        if(!in_array($endpoint,['eventspastleague.php','eventsnextleague.php','lookuptable.php','lookupleague.php','eventsday.php'],true))return new WP_Error('cof_endpoint','Consulta no permitida.');
++        if(!in_array($endpoint,['eventspastleague.php','eventsnextleague.php','lookuptable.php','lookupleague.php','eventsday.php','eventsround.php'],true))return new WP_Error('cof_endpoint','Consulta no permitida.');
+         $base='https://www.thesportsdb.com/api/v1/json/123/';$headers=['Accept'=>'application/json'];
++        // Free key: ~30 requests/minute per server IP. Keep a local budget below it to avoid HTTP 429 bursts.
++        $bucket='cof_tsdb_rpm_'.gmdate('YmdHi');$used=(int)get_transient($bucket);
++        if($used>=24)return new WP_Error('cof_429','Límite local de consultas por minuto (se reintenta en breve).');
++        set_transient($bucket,$used+1,2*MINUTE_IN_SECONDS);
+     }
+     $url=add_query_arg($query,$base.$endpoint);
+     $response=wp_safe_remote_get($url,['timeout'=>14,'redirection'=>0,'headers'=>$headers,'limit_response_size'=>1024*1024,'sslverify'=>true]);
+@@ -82,6 +88,39 @@ function cof_probe_league_identity($comp){
+     return ['name'=>$name,'country'=>$country];
+ }
+ 
++/**
++ * TheSportsDB strTimestamp is UTC but comes without a timezone suffix ("2026-11-02T22:00:00").
++ * 1.1.0 treated it as local time (wrong kickoff hour) and predictions rejected it. Normalize to "...Z".
++ */
++function cof_tsdb_normalize_timestamp($match){
++    $ts=trim((string)($match['strTimestamp']??''));
++    if(preg_match('/^(20\d{2}-\d{2}-\d{2})[T ](\d{2}:\d{2})(:\d{2})?(?:\+00:00|Z)?$/i',$ts,$m))return $m[1].'T'.$m[2].($m[3]??':00').'Z';
++    if($ts!=='' && preg_match('/(?:Z|[+-]\d{2}:?\d{2})$/i',$ts))return $ts;
++    $day=trim((string)($match['dateEvent']??''));$time=trim((string)($match['strTime']??''));
++    if(preg_match('/^20\d{2}-\d{2}-\d{2}$/',$day) && preg_match('/^(\d{2}:\d{2})(:\d{2})?$/',$time,$t) && $time!=='00:00:00')return $day.'T'.$t[1].':00Z';
++    return $day; // date-only values are not prediction-eligible
++}
++/** Full-round window: the free tier caps eventsday at ~3 rows, but eventsround returns the whole round. */
++function cof_tsdb_window($comp,$force=false){
++    $key='cof_win_'.md5(cof_cache_key($comp,'window'));
++    if(!$force){$c=get_transient($key);if(is_array($c))return $c;}
++    $id=cof_provider_id($comp);if(!$id)return new WP_Error('cof_no_id','Falta ID.');
++    $past=cof_http('eventspastleague.php',['id'=>$id]);$next=cof_http('eventsnextleague.php',['id'=>$id]);
++    if(is_wp_error($past)&&is_wp_error($next))return $next;
++    $matches=array_merge(is_wp_error($past)?[]:cof_parse_tsdb_matches($past),is_wp_error($next)?[]:cof_parse_tsdb_matches($next));
++    $rounds=[];
++    foreach([$past,$next] as $raw){if(is_wp_error($raw))continue;foreach((array)($raw['events']??[]) as $e){$r=absint($e['intRound']??0);if($r)$rounds[$r]=true;}}
++    // Current round(s) plus the next one: enough for Anteayer..Pasado mañana with few requests.
++    $want=[];foreach(array_keys($rounds) as $r){$want[$r]=true;if($r<100)$want[$r+1]=true;}
++    ksort($want);$want=array_slice(array_keys($want),0,3);
++    $failed=is_wp_error($past)||is_wp_error($next);
++    foreach($want as $r){$raw=cof_http('eventsround.php',['id'=>$id,'r'=>$r,'s'=>cof_season()]);if(is_wp_error($raw)){$failed=true;continue;}$matches=array_merge($matches,cof_parse_tsdb_matches($raw));}
++    $unique=[];foreach($matches as $m){$k=$m['id']!=='0'?$m['id']:md5($m['home'].'|'.$m['away'].'|'.$m['date']);$unique[$k]=$m;}
++    $out=['matches'=>array_values($unique),'fetched'=>time(),'rounds'=>$want,'partial_fail'=>$failed];
++    // Incomplete windows (429/timeouts on the free key) are retried soon instead of being cached for hours.
++    set_transient($key,$out,$failed?10*MINUTE_IN_SECONDS:3*HOUR_IN_SECONDS);
++    return $out;
++}
+ function cof_parse_tsdb_matches($data){
+     $matches=[];
+     foreach((array)($data['events']??[]) as $match){
+@@ -89,8 +128,7 @@ function cof_parse_tsdb_matches($data){
+         $h=trim(sanitize_text_field($match['strHomeTeam']??''));$a=trim(sanitize_text_field($match['strAwayTeam']??''));
+         if(!$h||!$a)continue;
+         $home=$match['intHomeScore']??null;$away=$match['intAwayScore']??null;
+-        $date=trim((string)($match['strTimestamp']??''));
+-        if(!$date){$date=trim((string)($match['dateEvent']??'')); /* date-only values are not prediction-eligible */ }
++        $date=cof_tsdb_normalize_timestamp($match);
+         $matches[]=[
+             'id'=>(string)absint($match['idEvent']??0),'home'=>$h,'away'=>$a,
+             'home_score'=>is_numeric($home)?(int)$home:null,'away_score'=>is_numeric($away)?(int)$away:null,
+@@ -126,12 +164,10 @@ function cof_fetch_fixtures($comp){
+         $raw=cof_http('fixtures',$query);if(is_wp_error($raw))return $raw;
+         $matches=cof_parse_api_matches($raw);
+     }else{
+-        // Free tier may only return one item for each request; disclose incompleteness.
+-        $past=cof_http('eventspastleague.php',['id'=>$id]);
+-        if(is_wp_error($past))return $past;
+-        $future=cof_http('eventsnextleague.php',['id'=>$id]);
+-        if(is_wp_error($future))return $future;
+-        $matches=array_merge(cof_parse_tsdb_matches($past),cof_parse_tsdb_matches($future));
++        // Free tier: whole rounds around the current one (eventsround) instead of 1 past + 1 next event.
++        $win=cof_tsdb_window($comp);
++        if(is_wp_error($win))return $win;
++        $matches=$win['matches'];
+     }
+     $unique=[];
+     foreach($matches as $match){$k=$match['id']!=='0'?$match['id']:md5($match['home'].'|'.$match['away'].'|'.$match['date']);$unique[$k]=$match;}
+diff --git a/plugins/cancha-predicciones/assets/predicciones.css b/plugins/cancha-predicciones/assets/predicciones.css
+index 94dd267..7c063c9 100644
+--- a/plugins/cancha-predicciones/assets/predicciones.css
++++ b/plugins/cancha-predicciones/assets/predicciones.css
+@@ -1 +1,25 @@
+ .cancha-pred-panel{margin:6px 0 18px}.cancha-pred-score{margin:0 0 14px;padding:10px 14px;border:1px solid var(--border,#ddd);border-radius:13px;background:var(--glass,#fff);font-size:14px}.cancha-pred-score strong{color:#561ec4;font-size:19px}.cancha-pred-score small{display:block;color:var(--muted,#777);font-size:11px}.cancha-pred-signup{padding:11px 14px;margin-bottom:14px;background:var(--glass,#fff);border:1px solid var(--border,#ddd);border-radius:12px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px}.cancha-pred-signup p{margin:0;font-size:13px}.cancha-pred-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:12px}.cancha-pred-match{padding:15px;background:var(--glass,#fff);border:1px solid var(--border,#e6e6eb);border-radius:16px;box-shadow:0 3px 13px #0000000b}.cancha-pred-time{font-size:11px;color:var(--muted,#666);margin-bottom:10px}.cancha-pred-teams{display:grid;grid-template-columns:1fr 24px 1fr;gap:8px;align-items:center;text-align:center;margin-bottom:13px}.cancha-pred-teams strong{font-size:13px;font-weight:850;overflow-wrap:anywhere}.cancha-pred-teams span{font-size:11px;color:var(--muted,#666)}.cancha-pred-picks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.cancha-pred-picks button{padding:9px 3px;border:1px solid #d7c3ff;border-radius:10px;background:#f7f3ff;color:#4b199b;font-weight:900;font-size:16px}.cancha-pred-picks button small{display:block;font-weight:650;font-size:9px}.cancha-pred-picks button.picked{background:#5e21bb;border-color:#5e21bb;color:white}.cancha-pred-picks button:hover{border-color:#5e21bb}.cancha-pred-points{font-size:11px;margin-top:12px;padding:8px;text-align:center;background:#f4f0fc;color:#4b199b;border-radius:8px}.cancha-pred-locked{font-size:12px;color:var(--muted,#666)}.cancha-pred-notice{border:1px solid #d7c3ff;padding:10px 13px;border-radius:12px;background:#f5f0ff;color:#3e147c}
++/* 0.3.0 — pestañas Oficiales | Amateur */
++.cancha-pred-v3{display:flex;flex-direction:column;gap:12px}
++.cancha-pred-head h1{margin:4px 0}.cancha-pred-head p{color:var(--muted);margin:0}
++.cancha-pred-tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:5px;border-radius:14px;background:var(--soft);border:1px solid var(--border);position:sticky;top:0;z-index:5;backdrop-filter:blur(10px)}
++.cancha-pred-tabs a{text-align:center;padding:10px 8px;border-radius:10px;font-weight:800;color:var(--muted)}
++.cancha-pred-tabs a.is-active{background:var(--glass-strong);color:var(--text);box-shadow:0 2px 10px rgba(0,0,0,.08)}
++.cancha-pred-totals{display:flex;gap:8px}.cancha-pred-totals span{flex:1;padding:10px 12px;border-radius:12px;background:var(--glass);border:1px solid var(--border);font-size:13px;color:var(--muted)}.cancha-pred-totals strong{color:var(--text);font-size:18px}
++.cancha-pred-access{padding:14px;border-radius:14px;background:var(--soft);border:1px dashed var(--border)}
++.cancha-pred-access p{margin:0 0 10px}
++.cancha-pred-source{font-size:12px;color:var(--muted);margin:0 0 6px}
++.cancha-pred-day{font-size:16px;margin:16px 0 6px}.cancha-pred-day small{color:var(--muted);font-weight:600}
++.cancha-pred-league{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:12px 0 6px}
++.cancha-pred-card{padding:10px 12px;border-radius:14px;background:var(--glass);border:1px solid var(--border);margin-bottom:8px}
++.cancha-pred-match{display:grid;grid-template-columns:auto minmax(0,1fr) auto minmax(0,1fr);gap:8px;align-items:center;font-weight:720}
++.cancha-pred-match span:nth-child(2){text-align:right}.cancha-pred-match b{color:var(--muted);font-size:12px}
++.cancha-pred-hour{font-size:12px;color:var(--muted);font-weight:700;min-width:44px}
++.cancha-pred-notice{padding:10px 12px;border-radius:12px;font-weight:700}
++.cancha-pred-notice.is-ok{background:rgba(24,215,122,.15);color:var(--text);border:1px solid rgba(24,215,122,.45)}
++.cancha-pred-notice.is-warn{background:rgba(255,170,0,.14);color:var(--text);border:1px solid rgba(255,170,0,.45)}
++.cancha-pred-mine{margin-top:14px;padding:10px 12px;border-radius:12px;background:var(--glass);border:1px solid var(--border)}
++.cancha-pred-mine summary{cursor:pointer;font-weight:800}
++.cancha-pred-mine ul{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
++.cancha-pred-mine li{display:flex;flex-direction:column;font-size:13px}.cancha-pred-mine li span,.cancha-pred-mine li em{color:var(--muted);font-size:12px}
++@media (max-width:520px){.cancha-pred-match{grid-template-columns:40px minmax(0,1fr) 18px minmax(0,1fr);font-size:13px;gap:5px}}
+diff --git a/plugins/cancha-predicciones/cancha-predicciones.php b/plugins/cancha-predicciones/cancha-predicciones.php
+index 21e62b1..d34e9f2 100644
+--- a/plugins/cancha-predicciones/cancha-predicciones.php
++++ b/plugins/cancha-predicciones/cancha-predicciones.php
+@@ -2,16 +2,17 @@
+ /**
+  * Plugin Name: CANCHA · Predicciones
+  * Description: Pronósticos recreativos 1X2 para partidos amateur y oficiales verificados, con puntos internos independientes de GamiPress.
+- * Version: 0.2.0
++ * Version: 0.3.0
+  * Requires at least: 6.4
+  * Requires PHP: 8.0
+  * License: GPL-2.0-or-later
+  * Text Domain: cancha-predicciones
+  */
+ defined('ABSPATH') || exit;
+-define('CANCHA_PRED_VERSION','0.2.0');
++define('CANCHA_PRED_VERSION','0.3.0');
+ define('CANCHA_PRED_FILE',__FILE__);
+ require_once __DIR__.'/official-predictions.php';
++require_once __DIR__.'/page.php';
+ function cancha_pred_table() {global $wpdb; return $wpdb->prefix.'cancha_predictions';}
+ function cancha_pred_create_table() {
+  global $wpdb;
+@@ -56,7 +57,7 @@ function cancha_pred_user_points($user_id=0) {
+  $t=cancha_pred_table();
+  return (int)$wpdb->get_var($wpdb->prepare("SELECT COALESCE(SUM(points),0) FROM $t WHERE user_id=%d",$user_id));
+ }
+-function cancha_pred_status_url($status){return add_query_arg('pred_status',sanitize_key($status),function_exists('cancha_route')?cancha_route('predicciones'):home_url('/predicciones/'));}
++function cancha_pred_status_url($status,$tipo='amateur'){return cancha_pred_return_url(['pred_status'=>sanitize_key($status),'tipo'=>$tipo]);}
+ add_action('admin_post_cancha_pred_save',function(){
+  if(!is_user_logged_in())wp_die('Ingresá a CANCHA para participar.','CANCHA',['response'=>403]);
+  if(!cancha_pred_user_allowed())wp_die('Verificá tu cuenta y aceptá los términos de CANCHA.','CANCHA',['response'=>403]);
+@@ -126,15 +127,15 @@ function cancha_pred_form_html($limit=4){
+   $out.='<article class="cancha-pred-match"><div class="cancha-pred-time">'.esc_html(str_replace('T',' · ',$start)).'</div><div class="cancha-pred-teams"><strong>'.esc_html(get_the_title($home)).'</strong><span>VS</span><strong>'.esc_html(get_the_title($away)).'</strong></div>';
+   if(cancha_pred_user_allowed()){
+    $out.='<form method="post" action="'.esc_url(admin_url('admin-post.php')).'" class="cancha-pred-picks"><input type="hidden" name="action" value="cancha_pred_save"><input type="hidden" name="match_id" value="'.absint($m->ID).'">'.wp_nonce_field('cancha_pred_'.$m->ID,'cancha_pred_nonce',true,false);
+-   foreach(['1'=>'Local','X'=>'Empate','2'=>'Visita'] as $pick=>$label){$out.='<button type="submit" name="pick" value="'.esc_attr($pick).'" class="'.($saved===$pick?'picked':'').'" aria-label="Pronosticar '.esc_attr($label).'">'.esc_html($pick).' <small>'.esc_html($label).'</small></button>';}
++   foreach(['1'=>'Local','X'=>'Empate','2'=>'Visita'] as $pick=>$label){$pick=(string)$pick;$out.='<button type="submit" name="pick" value="'.esc_attr($pick).'" class="'.($saved===$pick?'picked':'').'" aria-label="Pronosticar '.esc_attr($label).'">'.esc_html($pick).' <small>'.esc_html($label).'</small></button>';}
+    $out.='</form>';
+   }else $out.='<p class="cancha-pred-locked">Iniciá sesión para elegir 1 / X / 2</p>';
+   $out.='<div class="cancha-pred-points">⭐ '.cancha_pred_points_per_hit().' puntos por acierto</div></article>';
+  }
+  return $out.'</div></div>';
+ }
+-add_shortcode('cancha_predicciones',function($atts){$a=shortcode_atts(['limite'=>12],$atts);return cancha_pred_form_html(absint($a['limite'])) . (function_exists('cancha_pred_official_today')?cancha_pred_official_today():'');});
+-add_action('cancha_render_predicciones',function(){echo cancha_pred_form_html(is_front_page()?4:20);});
++add_shortcode('cancha_predicciones',function($atts){return cancha_pred_page_html();});
++// 0.3.0: /predicciones/ usa pestañas separadas Oficiales | Amateur (page.php).
+ add_action('admin_menu',function(){
+  if(!current_user_can('manage_options'))return;
+  add_submenu_page('cancha-core','Predicciones','🎯 Predicciones','manage_options','cancha-predicciones','cancha_pred_admin');
+diff --git a/plugins/cancha-predicciones/official-predictions.php b/plugins/cancha-predicciones/official-predictions.php
+index bce3953..8fa0c42 100644
+--- a/plugins/cancha-predicciones/official-predictions.php
++++ b/plugins/cancha-predicciones/official-predictions.php
+@@ -49,25 +49,23 @@ function cancha_pred_official_inline($comp,$m){
+  if(!cancha_pred_official_is_open($m))return '';
+  $provider=cancha_pred_official_source();if(!in_array($provider,['api-football','thesportsdb'],true))return '';
+  $id=(string)$m['id'];$name=(function_exists('cof_competitions')?(cof_competitions()[$comp]??'Fútbol oficial'):'Fútbol oficial');
+- $out='<div class="cancha-fixture-prediction"><span>🎯 Pronosticá 1/X/2 · +'.cancha_pred_official_points().' pts</span>';
+- if(!cancha_pred_user_allowed()){
+-  $link=function_exists('cancha_auth_url')?cancha_auth_url('ingresar'):wp_login_url();
+-  return $out.'<a href="'.esc_url($link).'">Ingresar para pronosticar</a></div>';
+- }
++ // 0.3.0: sin cuenta habilitada no se repite un aviso por partido; la lista muestra un único acceso.
++ if(!cancha_pred_user_allowed())return '';
++ $out='<div class="cancha-fixture-prediction"><span>🎯 1 · X · 2 · +'.cancha_pred_official_points().' pts</span>';
+  $existing=cancha_pred_official_existing($provider,$comp,$id);
+  $out.='<form class="cancha-inline-picks" action="'.esc_url(admin_url('admin-post.php')).'" method="post">';
+- $out.='<input type="hidden" name="action" value="cancha_pred_official_save"><input type="hidden" name="competition" value="'.esc_attr($comp).'"><input type="hidden" name="fixture_id" value="'.esc_attr($id).'"><input type="hidden" name="match_day" value="'.esc_attr(substr($m['date'],0,10)).'">';
++ $out.='<input type="hidden" name="action" value="cancha_pred_official_save"><input type="hidden" name="competition" value="'.esc_attr($comp).'"><input type="hidden" name="fixture_id" value="'.esc_attr($id).'"><input type="hidden" name="match_day" value="'.esc_attr(function_exists('cof_local_day')?cof_local_day($m['date']):substr($m['date'],0,10)).'"><input type="hidden" name="cancha_return" value="'.esc_attr(cancha_pred_current_url()).'">';
+  $out.=wp_nonce_field('cancha_pred_official_'.$comp.'_'.$id,'cancha_pred_nonce',true,false);
+- foreach(['1'=>'Local','X'=>'Empate','2'=>'Visitante'] as $pick=>$label) $out.='<button type="submit" name="pick" value="'.esc_attr($pick).'" class="'.((($existing['pick']??'')===$pick)?'is-picked':'').'" aria-label="Pronosticar '.esc_attr($label).' en '.esc_attr($name).'" aria-pressed="'.((($existing['pick']??'')===$pick)?'true':'false').'">'.esc_html($pick).'</button>';
++ foreach(['1'=>'Local','X'=>'Empate','2'=>'Visitante'] as $pick=>$label){$pick=(string)$pick;$out.='<button type="submit" name="pick" value="'.esc_attr($pick).'" class="'.((($existing['pick']??'')===$pick)?'is-picked':'').'" aria-label="Pronosticar '.esc_attr($label).' en '.esc_attr($name).'" aria-pressed="'.((($existing['pick']??'')===$pick)?'true':'false').'">'.esc_html($pick).'</button>';}
+  return $out.'</form></div>';
+ }
+ function cancha_pred_amateur_inline($id){
+  $post=get_post($id);if(!$post || !cancha_pred_is_open($post))return '';
+- $out='<div class="cancha-fixture-prediction"><span>🎯 Pronosticá 1/X/2 · +'.cancha_pred_points_per_hit().' pts</span>';
+- if(!cancha_pred_user_allowed())return $out.'<a href="'.esc_url(function_exists('cancha_auth_url')?cancha_auth_url('ingresar'):wp_login_url()).'">Ingresar para pronosticar</a></div>';
++ if(!cancha_pred_user_allowed())return '';
++ $out='<div class="cancha-fixture-prediction"><span>🎯 1 · X · 2 · +'.cancha_pred_points_per_hit().' pts</span>';
+  $current=cancha_pred_pick_for($id);
+- $out.='<form class="cancha-inline-picks" method="post" action="'.esc_url(admin_url('admin-post.php')).'"><input type="hidden" name="action" value="cancha_pred_save"><input type="hidden" name="match_id" value="'.absint($id).'">'.wp_nonce_field('cancha_pred_'.$id,'cancha_pred_nonce',true,false);
+- foreach(['1'=>'Local','X'=>'Empate','2'=>'Visitante'] as $pick=>$label)$out.='<button type="submit" name="pick" value="'.$pick.'" class="'.($current===$pick?'is-picked':'').'" aria-label="Pronosticar '.esc_attr($label).'" aria-pressed="'.($current===$pick?'true':'false').'">'.$pick.'</button>';
++ $out.='<form class="cancha-inline-picks" method="post" action="'.esc_url(admin_url('admin-post.php')).'"><input type="hidden" name="action" value="cancha_pred_save"><input type="hidden" name="match_id" value="'.absint($id).'"><input type="hidden" name="cancha_return" value="'.esc_attr(cancha_pred_current_url()).'">'.wp_nonce_field('cancha_pred_'.$id,'cancha_pred_nonce',true,false);
++ foreach(['1'=>'Local','X'=>'Empate','2'=>'Visitante'] as $pick=>$label){$pick=(string)$pick;$out.='<button type="submit" name="pick" value="'.$pick.'" class="'.($current===$pick?'is-picked':'').'" aria-label="Pronosticar '.esc_attr($label).'" aria-pressed="'.($current===$pick?'true':'false').'">'.$pick.'</button>';}
+  return $out.'</form></div>';
+ }
+ add_action('admin_post_cancha_pred_official_save',function(){
+@@ -78,15 +76,18 @@ add_action('admin_post_cancha_pred_official_save',function(){
+    ||!wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['cancha_pred_nonce']??'')),'cancha_pred_official_'.$comp.'_'.$id)
+    ||!function_exists('cof_calendar_validate_day')||!cof_calendar_validate_day($day))wp_die('Solicitud inválida.','CANCHA',['response'=>403]);
+  if(!function_exists('cof_get_calendar_day'))wp_die('El proveedor oficial no está disponible.','CANCHA',['response'=>503]);
+- $res=cof_get_calendar_day($comp,$day);if(is_wp_error($res))wp_die('El proveedor no pudo confirmar el partido.','CANCHA',['response'=>503]);
+- $match=null;foreach(($res['matches']??[]) as $m){if((string)($m['id']??'')===$id){$match=$m;break;}}
+- if(!$match||!cancha_pred_official_is_open($match))wp_die('El partido ya comenzó o no tiene horario confirmado.','CANCHA',['response'=>409]);
++ $match=null;
++ foreach([cof_get_calendar_day($comp,$day), function_exists('cof_get_fixtures')?cof_get_fixtures($comp):null] as $res){
++  if(!is_array($res))continue;
++  foreach(($res['matches']??[]) as $m){if((string)($m['id']??'')===$id){$match=$m;break 2;}}
++ }
++ if(!$match){wp_safe_redirect(cancha_pred_return_url(['pred_status'=>'proveedor','tipo'=>'oficiales']));exit;}
++ if(!cancha_pred_official_is_open($match)){wp_safe_redirect(cancha_pred_return_url(['pred_status'=>'cerrado','tipo'=>'oficiales']));exit;}
+  global $wpdb;$table=cancha_pred_official_table();$now=current_time('mysql');$source=cancha_pred_official_source();
+  $kickoff=gmdate('Y-m-d H:i:s',strtotime($match['date']));
+  $sql=$wpdb->prepare("INSERT INTO $table (user_id,provider,competition,fixture_id,pick,home_name,away_name,kickoff_utc,points,settled,created_at,updated_at) VALUES (%d,%s,%s,%s,%s,%s,%s,%s,0,'',%s,%s) ON DUPLICATE KEY UPDATE pick=VALUES(pick),updated_at=VALUES(updated_at)",get_current_user_id(),$source,$comp,$id,$pick,substr(sanitize_text_field($match['home']),0,200),substr(sanitize_text_field($match['away']),0,200),$kickoff,$now,$now);
+  if($wpdb->query($sql)===false)wp_die('No se pudo guardar el pronóstico.','CANCHA',['response'=>500]);
+- $return=add_query_arg(['fecha'=>$day,'pred_oficial'=>'guardado'],home_url('/'));
+- wp_safe_redirect($return.'#partidos');exit;
++ wp_safe_redirect(cancha_pred_return_url(['pred_status'=>'guardado','pred_oficial'=>'guardado','tipo'=>'oficiales']));exit;
+ });
+ function cancha_pred_official_final_winner($m){
+  $status=strtoupper(trim((string)($m['status']??'')));
+@@ -129,5 +130,5 @@ function cancha_pred_official_today(){
+  if(!$n)$out.='<p>Hoy no se recibieron partidos oficiales futuros con hora confirmada. Consultá otras fechas en <a href="'.esc_url(home_url('/')).'">Partidos</a>.</p>';
+  return $out.'</section>';
+ }
+-add_action('cancha_render_predicciones',function(){echo cancha_pred_official_today();},30);
++
+ add_action('admin_menu',function(){},80);
+diff --git a/plugins/cancha-predicciones/page.php b/plugins/cancha-predicciones/page.php
+new file mode 100644
+index 0000000..8f264dd
+--- /dev/null
++++ b/plugins/cancha-predicciones/page.php
+@@ -0,0 +1,130 @@
++<?php
++/**
++ * CANCHA Predicciones 0.3.0 — página con pestañas separadas «Oficiales» y «Amateur».
++ * Nunca mezcla fixtures: cada pestaña consulta solo su origen y guarda en su propia tabla.
++ */
++defined('ABSPATH') || exit;
++
++function cancha_pred_current_url(){
++    $uri=isset($_SERVER['REQUEST_URI'])?esc_url_raw(wp_unslash($_SERVER['REQUEST_URI'])):'/';
++    $url=home_url($uri);
++    return remove_query_arg(['pred_status','pred_oficial'],$url);
++}
++/** Vuelve a la página desde donde se pronosticó (solo mismo sitio) o a /predicciones/. */
++function cancha_pred_return_url($args){
++    $fallback=function_exists('cancha_route')?cancha_route('predicciones'):home_url('/predicciones/');
++    $raw=isset($_POST['cancha_return'])?esc_url_raw(wp_unslash($_POST['cancha_return'])):'';
++    $base=$raw?wp_validate_redirect($raw,$fallback):$fallback;
++    if(strpos($base,'/predicciones')===false)unset($args['tipo']);
++    return add_query_arg($args,remove_query_arg(['pred_status','pred_oficial'],$base));
++}
++function cancha_pred_notice_html(){
++    $st=isset($_GET['pred_status'])?sanitize_key(wp_unslash($_GET['pred_status'])):'';
++    $msg=['guardado'=>['ok','Pronóstico guardado. Podés cambiarlo hasta que empiece el partido.'],
++        'cerrado'=>['warn','Ese partido ya comenzó o está cerrado: no se aceptan más pronósticos.'],
++        'proveedor'=>['warn','La fuente externa no confirmó ese partido. Probá de nuevo en unos minutos.'],
++        'error'=>['warn','No se pudo guardar el pronóstico. Intentá nuevamente.']][$st]??null;
++    return $msg?'<p class="cancha-pred-notice is-'.$msg[0].'" role="status">'.esc_html($msg[1]).'</p>':'';
++}
++add_action('wp_body_open',function(){
++    // Aviso global cuando el pronóstico se hizo desde Partidos, Amateur o la ficha de un torneo.
++    if(isset($_GET['pred_status']) && !is_page('predicciones'))echo '<div class="cancha-pred-toast">'.cancha_pred_notice_html().'</div>';
++});
++
++/** Partidos oficiales abiertos para pronosticar en los próximos 7 días, agrupados por día y competición. */
++function cancha_pred_official_open_matches(){
++    if(!function_exists('cof_competitions')||!function_exists('cof_get_fixtures'))return [];
++    $out=[];$limit=time()+7*DAY_IN_SECONDS;
++    foreach(cof_competitions() as $comp=>$label){
++        if(!cof_provider_id($comp))continue;
++        $res=cof_get_fixtures($comp);if(is_wp_error($res))continue;
++        foreach(($res['matches']??[]) as $m){
++            if(!cancha_pred_official_is_open($m))continue;
++            if(strtotime($m['date'])>$limit)continue;
++            $out[]=['comp'=>$comp,'label'=>$label,'m'=>$m];
++        }
++    }
++    usort($out,static function($a,$b){return strcmp($a['m']['date'],$b['m']['date']);});
++    return $out;
++}
++function cancha_pred_access_html(){
++    if(!is_user_logged_in()){
++        $login=function_exists('cancha_auth_url')?add_query_arg('redirect_to',cancha_route('predicciones'),cancha_auth_url('ingresar')):wp_login_url();
++        $reg=function_exists('cancha_auth_url')?cancha_auth_url('registro'):wp_registration_url();
++        return '<div class="cancha-pred-access"><p><strong>Ingresá para pronosticar.</strong> Es gratis, recreativo y sin dinero real.</p><a class="button primary" href="'.esc_url($login).'">Ingresar</a> <a class="button ghost" href="'.esc_url($reg).'">Crear cuenta</a></div>';
++    }
++    if(cancha_pred_user_allowed())return '';
++    if(function_exists('cancha_terms_published')&&!cancha_terms_published())
++        return '<div class="cancha-pred-access"><p>Las predicciones se habilitan cuando CANCHA publique sus términos y condiciones vigentes.</p></div>';
++    if(get_user_meta(get_current_user_id(),'cancha_email_verified',true)==='pending')
++        return '<div class="cancha-pred-access"><p>Confirmá tu correo con el enlace que te enviamos para empezar a pronosticar.</p></div>';
++    return '<div class="cancha-pred-access"><p>Para participar aceptá los términos vigentes.</p>'.(function_exists('cancha_terms_accept_form')?cancha_terms_accept_form():'').'</div>';
++}
++function cancha_pred_my_official(){
++    if(!is_user_logged_in())return '';
++    global $wpdb;$t=cancha_pred_official_table();
++    $rows=$wpdb->get_results($wpdb->prepare("SELECT competition,home_name,away_name,kickoff_utc,pick,points,settled FROM $t WHERE user_id=%d ORDER BY kickoff_utc DESC LIMIT 10",get_current_user_id()),ARRAY_A);
++    if(!$rows)return '';
++    $names=function_exists('cof_competitions')?cof_competitions():[];
++    $h='<details class="cancha-pred-mine"><summary>Mis pronósticos oficiales ('.count($rows).')</summary><ul>';
++    foreach($rows as $r){$when=wp_date('j M H:i',strtotime($r['kickoff_utc'].' UTC'));
++        $state=$r['settled']===''?'Pendiente':((int)$r['points']>0?'+'.(int)$r['points'].' pts':'0 pts');
++        $h.='<li><span>'.esc_html($names[$r['competition']]??$r['competition']).' · '.esc_html($when).'</span><strong>'.esc_html($r['home_name'].' vs '.$r['away_name']).'</strong><em>Elegiste '.esc_html($r['pick']).' · '.esc_html($state).'</em></li>';}
++    return $h.'</ul></details>';
++}
++function cancha_pred_my_amateur(){
++    if(!is_user_logged_in())return '';
++    global $wpdb;$t=cancha_pred_table();
++    $rows=$wpdb->get_results($wpdb->prepare("SELECT match_id,pick,points FROM $t WHERE user_id=%d ORDER BY updated_at DESC LIMIT 10",get_current_user_id()),ARRAY_A);
++    if(!$rows)return '';
++    $h='<details class="cancha-pred-mine"><summary>Mis pronósticos amateur ('.count($rows).')</summary><ul>';
++    foreach($rows as $r){$id=absint($r['match_id']);if(get_post_type($id)!=='cancha_partido')continue;
++        $final=get_post_meta($id,'_cancha_result_status',true)==='final';
++        $h.='<li><span>'.esc_html(get_the_title(absint(get_post_meta($id,'_cancha_comp_id',true)))).'</span><strong>'.esc_html(get_the_title(absint(get_post_meta($id,'_cancha_home',true))).' vs '.get_the_title(absint(get_post_meta($id,'_cancha_away',true)))).'</strong><em>Elegiste '.esc_html($r['pick']).' · '.esc_html($final?((int)$r['points']>0?'+'.(int)$r['points'].' pts':'0 pts'):'Pendiente').'</em></li>';}
++    return $h.'</ul></details>';
++}
++function cancha_pred_official_points_total(){
++    if(!is_user_logged_in())return 0;global $wpdb;$t=cancha_pred_official_table();
++    return (int)$wpdb->get_var($wpdb->prepare("SELECT COALESCE(SUM(points),0) FROM $t WHERE user_id=%d",get_current_user_id()));
++}
++
++function cancha_pred_page_html(){
++    $tipo=isset($_GET['tipo'])&&sanitize_key(wp_unslash($_GET['tipo']))==='amateur'?'amateur':'oficiales';
++    $base=function_exists('cancha_route')?cancha_route('predicciones'):home_url('/predicciones/');
++    $h='<div class="cancha-pred-v3"><header class="cancha-pred-head"><span class="eyebrow">PREDICCIONES</span><h1>Pronosticá 1 · X · 2</h1><p>Recreativo, por puntos, sin dinero real ni apuestas. Podés cambiar tu elección hasta el inicio del partido.</p></header>';
++    $h.=cancha_pred_notice_html();
++    if(is_user_logged_in())$h.='<div class="cancha-pred-totals"><span>Oficiales <strong>'.cancha_pred_official_points_total().'</strong> pts</span><span>Amateur <strong>'.cancha_pred_user_points().'</strong> pts</span></div>';
++    $h.='<nav class="cancha-pred-tabs" aria-label="Tipo de predicción">';
++    foreach(['oficiales'=>'⚽ Oficiales','amateur'=>'🏆 Amateur'] as $k=>$l)$h.='<a href="'.esc_url(add_query_arg('tipo',$k,$base)).'"'.($k===$tipo?' aria-current="page" class="is-active"':'').'>'.esc_html($l).'</a>';
++    $h.='</nav>'.cancha_pred_access_html();
++    if(has_action('cancha_ads_predicciones')){ob_start();do_action('cancha_ads_predicciones');$h.=ob_get_clean();}
++    if($tipo==='oficiales'){
++        $h.='<section class="cancha-pred-section" data-origin="profesional"><p class="cancha-pred-source">Fútbol profesional · próximos 7 días · fuente '.esc_html(function_exists('cof_settings')&&cof_settings()['provider']==='api-football'?'API-Football':'TheSportsDB').' (cobertura gratuita parcial). +'.cancha_pred_official_points().' pts por acierto.</p>';
++        $list=cancha_pred_official_open_matches();
++        if(!$list)$h.='<div class="module-empty">La fuente externa no informó partidos profesionales futuros con horario confirmado en los próximos 7 días.</div>';
++        $day='';$comp='';
++        foreach($list as $it){
++            $d=function_exists('cof_local_day')?cof_local_day($it['m']['date']):substr($it['m']['date'],0,10);
++            if($d!==$day){if($day!=='')$h.='</div>';$day=$d;$comp='';$h.='<h2 class="cancha-pred-day">'.esc_html(function_exists('cancha_day_relative_label')?cancha_day_relative_label($d):$d).' <small>'.esc_html(wp_date('j M',strtotime($d.' 12:00'))).'</small></h2><div class="cancha-pred-dayblock">';}
++            if($it['comp']!==$comp){$comp=$it['comp'];$h.='<h3 class="cancha-pred-league">'.esc_html($it['label']).'</h3>';}
++            $ts=strtotime($it['m']['date']);
++            $h.='<article class="cancha-pred-card" data-origin="profesional"><div class="cancha-pred-match"><span class="cancha-pred-hour">'.esc_html(wp_date('H:i',$ts)).'</span><span>'.esc_html($it['m']['home']).'</span><b>vs</b><span>'.esc_html($it['m']['away']).'</span></div>'.cancha_pred_official_inline($it['comp'],$it['m']).'</article>';
++        }
++        if($day!=='')$h.='</div>';
++        $h.=cancha_pred_my_official().'</section>';
++    }else{
++        $h.='<section class="cancha-pred-section" data-origin="amateur"><p class="cancha-pred-source">Torneos amateur de CANCHA · resultados validados por la organización. +'.cancha_pred_points_per_hit().' pts por acierto.</p>';
++        $matches=cancha_pred_upcoming(40);
++        if(!$matches)$h.='<div class="module-empty">No hay partidos amateur futuros publicados con fecha y hora. Los organizadores los programan desde el escritorio.</div>';
++        $group=[];foreach($matches as $m)$group[absint(get_post_meta($m->ID,'_cancha_comp_id',true))][]=$m;
++        foreach($group as $cid=>$list){
++            $h.='<h3 class="cancha-pred-league">🏆 '.esc_html($cid?get_the_title($cid):'Amateur').'</h3>';
++            foreach($list as $m){$home=absint(get_post_meta($m->ID,'_cancha_home',true));$away=absint(get_post_meta($m->ID,'_cancha_away',true));if(!$home||!$away)continue;
++                $start=(string)get_post_meta($m->ID,'_cancha_start',true);$dt=DateTimeImmutable::createFromFormat('!Y-m-d\TH:i',$start,wp_timezone());
++                $h.='<article class="cancha-pred-card" data-origin="amateur"><div class="cancha-pred-match"><span class="cancha-pred-hour">'.esc_html($dt?wp_date('D j M H:i',$dt->getTimestamp()):'').'</span><span>'.esc_html(get_the_title($home)).'</span><b>vs</b><span>'.esc_html(get_the_title($away)).'</span></div>'.cancha_pred_amateur_inline($m->ID).'</article>';}
++        }
++        $h.=cancha_pred_my_amateur().'</section>';
++    }
++    return $h.'</div>';
++}
++add_action('cancha_render_predicciones',function(){echo cancha_pred_page_html();});
+diff --git a/themes/cancha-glass/assets/css/cancha-141.css b/themes/cancha-glass/assets/css/cancha-141.css
+new file mode 100644
+index 0000000..339d5a3
+--- /dev/null
++++ b/themes/cancha-glass/assets/css/cancha-141.css
+@@ -0,0 +1,48 @@
++/* CANCHA Glass 1.4.1 — Partidos profesionales estilo lista compacta por día y liga; accesos separados Amateur. */
++.cancha-matchday[data-origin=profesional] .cancha-fixture-league{border-radius:16px;margin-bottom:12px}
++.cancha-fixture-league-head h3{display:flex;align-items:center;gap:9px;font-size:15px;margin:0;flex:1;min-width:0}
++.cancha-league-badge{display:inline-grid;place-items:center;min-width:34px;height:24px;padding:0 6px;border-radius:7px;background:var(--accent);color:#fff;font-size:10px;font-weight:800;letter-spacing:.04em}
++:root[data-theme=dark] .cancha-league-badge{color:#04261a}
++.cancha-pro-row .cancha-fixture-main{grid-template-columns:52px minmax(0,1fr) 58px minmax(0,1fr);gap:8px}
++.cancha-pro-row .cancha-fixture-team.is-home{text-align:right}
++.cancha-pro-row .cancha-fixture-team.is-away{text-align:left}
++.cancha-pro-row .cancha-fixture-result{display:inline-block;padding:4px 6px;border-radius:8px;background:var(--soft);font-variant-numeric:tabular-nums}
++.cancha-pro-row.is-final .cancha-fixture-result{background:transparent;font-weight:800}
++.cancha-pro-row.is-live .cancha-fixture-time{color:#e5484d}
++.cancha-pro-row .cancha-fixture-prediction{margin-left:60px}
++@media (max-width:520px){
++ .cancha-pro-row .cancha-fixture-main{grid-template-columns:40px minmax(0,1fr) 48px minmax(0,1fr);gap:5px;font-size:12.5px}
++ .cancha-pro-row .cancha-fixture-prediction{margin-left:0}
++}
++.cancha-fixture-prediction form{display:flex;gap:6px}
++.cancha-fixture-prediction button{min-width:40px;min-height:34px;border-radius:9px;border:1px solid var(--border);background:var(--glass-strong);color:var(--text);font-weight:800}
++.cancha-fixture-prediction button.is-picked,.cancha-fixture-prediction button[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:#fff}
++.cancha-fixture-prediction a{font-weight:750;color:var(--accent)}
++/* Inicio: acceso a Amateur (experiencia separada) */
++.cancha-amateur-cta{display:flex;align-items:center;gap:14px;margin:16px 0;padding:16px 18px;border-radius:16px;background:var(--glass);border:1px solid var(--border);color:var(--text);box-shadow:var(--shadow)}
++.cancha-amateur-cta>span:first-child{font-size:28px}.cancha-amateur-cta span:nth-child(2){flex:1;display:flex;flex-direction:column;gap:3px}.cancha-amateur-cta small{color:var(--muted)}
++.cancha-amateur-cta>span:last-child{font-size:22px;color:var(--muted)}
++/* Barra inferior: estado activo visible en ambos modos */
++.cancha-bottom-tabs a[aria-current=page]{color:var(--accent)}
++.cancha-bottom-tabs a[aria-current=page] small{font-weight:800}
++/* Selector claro/oscuro siempre visible en 390 px */
++#theme-toggle{display:inline-flex!important;align-items:center;justify-content:center;min-width:40px;min-height:40px}
++@media (max-width:520px){#theme-toggle .cancha-theme-word{display:none}}
++/* Aviso de pronóstico guardado fuera de /predicciones/ */
++.cancha-pred-toast{position:sticky;top:0;z-index:30;padding:8px 12px}
++.cancha-pred-toast .cancha-pred-notice{margin:0}
++.cancha-matchday-title{margin:2px 0;font-size:24px}
++.cancha-pro-row .cancha-fixture-main{grid-template-columns:44px minmax(0,1fr) 58px minmax(0,1fr)}
++.cancha-pro-row .cancha-fixture-time:empty{visibility:hidden}
++.cancha-pred-cta{display:flex;align-items:center;gap:10px;margin:10px 0 12px;padding:11px 14px;border-radius:14px;background:var(--soft);border:1px solid var(--border);color:var(--text);font-weight:700;font-size:13px}
++.cancha-pred-cta span:nth-child(2){flex:1}.cancha-pred-cta span:last-child{color:var(--muted);font-size:18px}
++.cancha-fixture-prediction{padding:6px 9px;margin:4px 0 0}
++@media (max-width:520px){
++ .cancha-datebar .cancha-day-arrow{display:none}
++ .cancha-datebar .cancha-day-scroll{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));overflow:visible;gap:2px;flex:1}
++ .cancha-datebar .cancha-day-item{min-width:0;padding:7px 2px;text-align:center}
++ .cancha-datebar .cancha-day-item span{font-size:11.5px;white-space:normal;line-height:1.15}
++ .cancha-pro-row .cancha-fixture-main{grid-template-columns:30px minmax(0,1fr) 50px minmax(0,1fr)}
++}
++.cancha-page-banner .ligas-featured-ad{margin-left:0!important;margin-right:0!important;width:100%!important;max-width:100%;box-sizing:border-box}.cancha-page-banner{overflow:hidden;border-radius:18px;margin-bottom:12px}
++:root[data-theme=dark] .ligas-header-search{background:var(--glass-strong);border:1px solid var(--border)}:root[data-theme=dark] .ligas-header-search input{color:var(--text);background:transparent}:root[data-theme=dark] .ligas-header-search input::placeholder{color:var(--muted)}
+diff --git a/themes/cancha-glass/footer.php b/themes/cancha-glass/footer.php
+index f7ce2ef..b23b021 100644
+--- a/themes/cancha-glass/footer.php
++++ b/themes/cancha-glass/footer.php
+@@ -7,13 +7,15 @@
+ <nav class="mobile-tabs cancha-bottom-tabs" aria-label="Navegación principal móvil">
+ <?php
+ $tabs=[
+- ['','▦','Partidos'],['campeonatos','🏆','Amateur'],['predicciones','◎','Predicciones'],['novedades','▤','Novedades'],
++ ['partidos','⚽','Partidos'],['amateur','🏆','Amateur'],['predicciones','◎','Predicciones'],['novedades','▤','Novedades'],
+ ];
+-$path=is_front_page()?'':(is_page()?get_post_field('post_name',get_queried_object_id()):'');
++$path=is_front_page()?'partidos':(is_page()?get_post_field('post_name',get_queried_object_id()):'');
++if(is_singular(['cancha_campeonato','cancha_equipo','cancha_jugador','cancha_partido','cancha_staff']) || $path==='campeonatos')$path='amateur';
++if(in_array($path,['calendario','futbol-oficial'],true))$path='partidos';
++if(is_singular('post') || is_home())$path='novedades';
+ foreach($tabs as $tab){
+- $url=$tab[0]===''?home_url('/'):cancha_route($tab[0]);
+- if($tab[0]==='campeonatos')$url.='#campeonatos-amateur';
+- $active=$tab[0]===''?in_array($path,['','calendario'],true):$path===$tab[0];
++ $url=cancha_route($tab[0]);
++ $active=$path===$tab[0];
+  echo '<a href="'.esc_url($url).'" '.($active?'aria-current="page"':'').'><span aria-hidden="true">'.esc_html($tab[1]).'</span><small>'.esc_html($tab[2]).'</small></a>';
+ }
+ ?><button class="cancha-more-bottom" type="button" aria-controls="site-nav" aria-expanded="false"><span aria-hidden="true">☰</span><small>Más</small></button>
+diff --git a/themes/cancha-glass/front-page.php b/themes/cancha-glass/front-page.php
+index c66b656..c70aa64 100644
+--- a/themes/cancha-glass/front-page.php
++++ b/themes/cancha-glass/front-page.php
+@@ -4,8 +4,9 @@
+  <?php cancha_ligas_main_banner(); cancha_ligas_sponsor_carousel(); ?>
+  <?php if(isset($_GET['pred_oficial']) && sanitize_key(wp_unslash($_GET['pred_oficial']))==='guardado'): ?><div class="cancha-alert-ok" role="status">Tu pronóstico quedó guardado correctamente.</div><?php endif; ?>
+  <?php cancha_matchday_render(null,false); ?>
+- <div class="cancha-home-shortcuts"><a href="<?php echo esc_url(cancha_route('campeonatos')); ?>">🏆 Campeonatos amateur</a><a href="<?php echo esc_url(cancha_route('predicciones')); ?>">🎯 Todas las predicciones</a><a href="<?php echo esc_url(cancha_route('novedades')); ?>">📰 Novedades</a></div>
+- <?php if(cancha_ui_setting('home_show_amateur',1)): ?><section class="cancha-home-tournaments"><div class="ligas-section-head"><h2>Campeonatos amateur</h2><a href="<?php echo esc_url(cancha_route('campeonatos')); ?>">Ver torneos →</a></div><?php cancha_ligas_amateur(); ?></section><?php endif; ?>
++ <div class="cancha-home-shortcuts"><a href="<?php echo esc_url(cancha_route('amateur')); ?>">🏆 Fútbol amateur</a><a href="<?php echo esc_url(cancha_route('predicciones')); ?>">🎯 Todas las predicciones</a><a href="<?php echo esc_url(cancha_route('novedades')); ?>">📰 Novedades</a></div>
++ <?php if(cancha_ui_setting('home_show_amateur',1)): ?><a class="cancha-amateur-cta" href="<?php echo esc_url(cancha_route('amateur')); ?>"><span aria-hidden="true">🏆</span><span><strong>Fútbol amateur</strong><small>Torneos, zonas, fixture por jornada, equipos, jugadores y eliminatorias</small></span><span aria-hidden="true">›</span></a><?php endif; ?>
++ <?php if(has_action('cancha_ads_home_bottom')) do_action('cancha_ads_home_bottom'); ?>
+  <?php if (cancha_ui_setting('show_news',1)): ?><section class="ligas-section ligas-news-section"><div class="ligas-section-head"><h2>📰 Novedades</h2><a href="<?php echo esc_url(cancha_route('novedades')); ?>">Ver todas →</a></div><?php cancha_news_cards((int)cancha_ui_setting('news_count',4)); ?></section><?php endif; ?>
+  <section class="glass install-strip" id="cancha-install" hidden><div><strong>CANCHA en tu celular</strong><p>Instalá la webapp para acceder desde el inicio.</p></div><button id="cancha-install-button" class="button ghost" type="button">Instalar</button></section>
+ </div><?php get_footer(); ?>
+diff --git a/themes/cancha-glass/functions.php b/themes/cancha-glass/functions.php
+index 56d51bf..ab8df3c 100644
+--- a/themes/cancha-glass/functions.php
++++ b/themes/cancha-glass/functions.php
+@@ -1,7 +1,7 @@
+ <?php
+ /** CANCHA Glass bootstrap. */
+ defined('ABSPATH') || exit;
+-define('CANCHA_VERSION', '1.4.0');
++define('CANCHA_VERSION', '1.4.1');
+ foreach (['core', 'sponsors', 'auth', 'api', 'pwa', 'google', 'ui', 'news', 'install', 'ligas', 'matchday'] as $part) {
+     require_once get_template_directory() . '/inc/' . $part . '.php';
+ }
+@@ -20,6 +20,7 @@ add_action('wp_enqueue_scripts', function () {
+     wp_enqueue_script('cancha-glass', get_template_directory_uri() . '/assets/js/theme.js', [], CANCHA_VERSION, true);
+     wp_enqueue_style('cancha-ligas', get_template_directory_uri() . '/assets/css/ligas.css', ['cancha-glass'], CANCHA_VERSION);
+     wp_enqueue_script('cancha-ligas', get_template_directory_uri() . '/assets/js/ligas.js', [], CANCHA_VERSION, true);
++    wp_enqueue_style('cancha-v141', get_template_directory_uri() . '/assets/css/cancha-141.css', ['cancha-ligas'], CANCHA_VERSION);
+     $pwa = cancha_pwa_enabled();
+     wp_add_inline_script('cancha-glass', 'window.canchaUI = ' . wp_json_encode([
+         'pwa' => $pwa,
+diff --git a/themes/cancha-glass/header.php b/themes/cancha-glass/header.php
+index ac69e51..f10b4c9 100644
+--- a/themes/cancha-glass/header.php
++++ b/themes/cancha-glass/header.php
+@@ -1,6 +1,7 @@
+ <?php defined('ABSPATH') || exit; ?>
+ <!doctype html><html <?php language_attributes(); ?>><head>
+ <meta charset="<?php bloginfo('charset'); ?>"><meta name="viewport" content="width=device-width, initial-scale=1">
++<script>(function(){try{var t=localStorage.getItem('cancha-theme');}catch(e){}var d=<?php echo wp_json_encode(cancha_ui_setting('default_color_mode','light')==='dark'?'dark':'light'); ?>;document.documentElement.dataset.theme=(t==='light'||t==='dark')?t:d;})();</script>
+ <?php wp_head(); ?></head>
+ <body <?php body_class(); ?>><?php wp_body_open(); ?>
+ <a class="skip-link" href="#contenido">Saltar al contenido</a>
+@@ -25,7 +26,7 @@
+  <nav class="site-nav" id="site-nav" aria-label="Menú de CANCHA"><div class="cancha-menu-title"><strong>Menú de CANCHA</strong><button type="button" class="cancha-menu-close" aria-label="Cerrar menú">×</button></div><div class="cancha-menu-tools"><a href="<?php echo esc_url(is_user_logged_in()?cancha_route('mi-panel'):cancha_auth_url('ingresar')); ?>">👤 <?php echo is_user_logged_in()?'Mi cuenta':'Ingresar / Registrarse'; ?></a><button class="cancha-menu-theme" type="button">◐ Cambiar apariencia</button></div>
+  <?php if (has_nav_menu('primary')) wp_nav_menu(['theme_location'=>'primary','container'=>false,'menu_class'=>'nav-items','depth'=>1]);
+  else { ?><ul class="nav-items">
+- <?php foreach (['/'=>'Inicio','campeonatos'=>'Ligas','calendario'=>'Partidos','novedades'=>'Noticias','predicciones'=>'Predicciones','futbol-oficial'=>'Fútbol oficial','ranking'=>'Ranking','mi-panel'=>'Mi panel'] as $slug=>$label) { ?>
++ <?php foreach (['/'=>'Inicio','partidos'=>'Partidos profesionales','futbol-oficial'=>'Tablas y ligas profesionales','amateur'=>'Fútbol amateur','predicciones'=>'Predicciones','novedades'=>'Novedades','ranking'=>'Ranking','mi-panel'=>'Mi panel','buscar'=>'Buscar'] as $slug=>$label) { ?>
+  <li><a href="<?php echo esc_url($slug==='/'?home_url('/'):cancha_route($slug)); ?>"><?php echo esc_html($label); ?></a></li><?php } ?>
+  </ul><?php } ?>
+  </nav>
+diff --git a/themes/cancha-glass/inc/install.php b/themes/cancha-glass/inc/install.php
+index 79ad512..d2105f8 100644
+--- a/themes/cancha-glass/inc/install.php
++++ b/themes/cancha-glass/inc/install.php
+@@ -6,6 +6,8 @@ function cancha_install_pages() {
+        'campeonatos'=>'Campeonatos',
+        'futbol-oficial'=>'Fútbol oficial',
+        'calendario'=>'Calendario y partidos',
++       'partidos'=>'Partidos',
++       'amateur'=>'Fútbol amateur',
+        'predicciones'=>'Predicciones',
+        'ranking'=>'Ranking',
+        'mi-panel'=>'Mi panel',
+diff --git a/themes/cancha-glass/inc/matchday.php b/themes/cancha-glass/inc/matchday.php
+index 66a57be..8f59952 100644
+--- a/themes/cancha-glass/inc/matchday.php
++++ b/themes/cancha-glass/inc/matchday.php
+@@ -1,5 +1,5 @@
+ <?php
+-/** CANCHA Partidos: fecha navegable y cronograma mixto (amateur + oficiales). */
++/** CANCHA Partidos: fecha navegable SOLO de fútbol profesional. El amateur tiene su propia experiencia en /amateur/. */
+ defined('ABSPATH') || exit;
+ function cancha_day_valid($day){
+     if(!is_string($day)||!preg_match('/^20\d{2}-\d{2}-\d{2}$/D',$day))return false;
+@@ -14,7 +14,7 @@ function cancha_day_selected(){
+     return $diff->days>45?$today:$candidate;
+ }
+ function cancha_day_url($day,$base=''){
+-    $url=$base?:cancha_route('calendario');
++    $url=$base?:cancha_route('partidos');
+     return add_query_arg('fecha',$day,$url);
+ }
+ function cancha_day_relative_label($day){
+@@ -42,11 +42,11 @@ function cancha_amateur_day_matches($day){
+ }
+ function cancha_day_navigation($day,$home=false){
+     $selected=new DateTimeImmutable($day,wp_timezone());
+-    $base=$home?home_url('/'):cancha_route('calendario');
++    $base=$home?home_url('/'):cancha_route('partidos');
+     echo '<nav class="cancha-datebar" aria-label="Elegir fecha de partidos">';
+     echo '<a class="cancha-day-arrow" aria-label="Día anterior" href="'.esc_url(cancha_day_url($selected->modify('-1 day')->format('Y-m-d'),$base)).'">‹</a>';
+     echo '<div class="cancha-day-scroll">';
+-    for($i=-3;$i<=3;$i++){
++    for($i=-2;$i<=2;$i++){
+         $d=$selected->modify(($i>=0?'+':'').$i.' days')->format('Y-m-d');
+         $active=$d===$day;
+         echo '<a class="cancha-day-item'.($active?' is-selected':'').'" href="'.esc_url(cancha_day_url($d,$base)).'" '.($active?'aria-current="date"':'').'><span>'.esc_html(cancha_day_relative_label($d)).'</span><small>'.esc_html(wp_date('j M',(new DateTimeImmutable($d,wp_timezone()))->getTimestamp())).'</small></a>';
+@@ -67,35 +67,38 @@ function cancha_amateur_result_row($post){
+     if(function_exists('cancha_pred_amateur_inline'))echo cancha_pred_amateur_inline($id);
+     echo '</article>';
+ }
++function cancha_pro_league_badge($comp){
++    return ['liga_profesional'=>'LPF','primera_nacional'=>'PN','copa_argentina'=>'CA','libertadores'=>'LIB','sudamericana'=>'SUD'][$comp]??'⚽';
++}
+ function cancha_official_result_row($match,$comp){
+     $dt=cancha_match_kickoff($match['date']??'');
+     $s=strtoupper((string)($match['status']??''));
+     $final=in_array($s,['FT','AET','PEN','MATCH FINISHED','FINISHED','FULL TIME','FULLTIME','AFTER EXTRA TIME','AFTER PENALTIES'],true);
++    $live=in_array($s,['1H','2H','HT','ET','BT','P','LIVE','IN PLAY'],true);
++    $off=in_array($s,['PST','CANC','SUSP','INT','ABD','AWD','WO','POSTPONED','MATCH POSTPONED','CANCELLED'],true);
++    $has=is_numeric($match['home_score']??null)&&is_numeric($match['away_score']??null);
+     $home=$match['home']??'';$away=$match['away']??'';
+-    echo '<article class="cancha-fixture"><div class="cancha-fixture-main">';
+-    echo '<span class="cancha-fixture-time">'.($final?'Final':($dt?esc_html($dt->setTimezone(wp_timezone())->format('H:i')):'Horario pendiente')).'</span>';
+-    echo '<span class="cancha-fixture-team">'.esc_html($home).'</span><strong class="cancha-fixture-result">'.($final&&is_numeric($match['home_score']??null)&&is_numeric($match['away_score']??null)?esc_html($match['home_score'].' – '.$match['away_score']):'vs').'</strong><span class="cancha-fixture-team">'.esc_html($away).'</span><span class="cancha-fixture-more" aria-hidden="true">⚽</span></div>';
++    $time=$dt?$dt->setTimezone(wp_timezone())->format('H:i'):'A conf.';
++    $state=$final?'Final':($live?'En vivo':($off?'Aplazado':''));
++    echo '<article class="cancha-fixture cancha-pro-row'.($final?' is-final':'').($live?' is-live':'').'" data-origin="profesional"><div class="cancha-fixture-main">';
++    echo '<span class="cancha-fixture-time">'.esc_html($state).'</span>';
++    echo '<span class="cancha-fixture-team is-home">'.esc_html($home).'</span>';
++    echo '<strong class="cancha-fixture-result">'.(($final||$live)&&$has?esc_html($match['home_score'].' - '.$match['away_score']):esc_html($state?'vs':$time)).'</strong>';
++    echo '<span class="cancha-fixture-team is-away">'.esc_html($away).'</span></div>';
+     if(function_exists('cancha_pred_official_inline')) echo cancha_pred_official_inline($comp,$match);
+     echo '</article>';
+ }
+ function cancha_matchday_render($day=null,$show_datebar=true){
+     $day=$day&&cancha_day_valid($day)?$day:cancha_day_selected();
+     $today=$day===wp_date('Y-m-d');
+-    echo '<section class="cancha-matchday" id="partidos"><div class="cancha-matchday-heading"><div><span class="eyebrow">AGENDA DE FÚTBOL</span><h2>Partidos · '.esc_html(cancha_day_relative_label($day)).'</h2></div><span class="cancha-coverage-note">Horarios de Argentina</span></div>';
++    echo '<section class="cancha-matchday" id="partidos" data-origin="profesional"><div class="cancha-matchday-heading"><div><span class="eyebrow">FÚTBOL PROFESIONAL</span><'.(is_front_page()?'h2':'h1').' class="cancha-matchday-title">Partidos · '.esc_html(cancha_day_relative_label($day)).'</'.(is_front_page()?'h2':'h1').'></div><span class="cancha-coverage-note">Horarios de Argentina</span></div>';
+     if($show_datebar)cancha_day_navigation($day,is_front_page());
+-    echo '<div class="cancha-matchday-grid">';
+-    $grouped=[];
+-    foreach(cancha_amateur_day_matches($day) as $match){
+-        $comp=absint(get_post_meta($match->ID,'_cancha_comp_id',true));
+-        if(!$comp)$comp=absint(get_post_meta($match->ID,'_cancha_tournament',true));
+-        $key=$comp?:0;
+-        $grouped[$key][]=$match;
+-    }
+-    foreach($grouped as $comp=>$matches){
+-        echo '<section class="cancha-fixture-league"><div class="cancha-fixture-league-head"><h3>🏟 '.esc_html($comp?get_the_title($comp):'Fútbol amateur').'</h3><span class="cancha-league-count">'.count($matches).' partidos</span><button type="button" class="cancha-league-toggle" aria-expanded="true" aria-label="Contraer liga">⌃</button></div>';
+-        foreach($matches as $match)cancha_amateur_result_row($match);
+-        echo '</section>';
++    if(function_exists('cancha_pred_user_allowed') && !cancha_pred_user_allowed()){
++        $link=is_user_logged_in()?cancha_route('predicciones'):add_query_arg('redirect_to',cancha_route('partidos'),function_exists('cancha_auth_url')?cancha_auth_url('ingresar'):wp_login_url());
++        echo '<a class="cancha-pred-cta" href="'.esc_url($link).'"><span aria-hidden="true">🎯</span><span>'.(is_user_logged_in()?'Completá tu cuenta para pronosticar 1 · X · 2':'Ingresá y pronosticá 1 · X · 2 en los partidos que todavía no empezaron').'</span><span aria-hidden="true">›</span></a>';
+     }
++    echo '<div class="cancha-matchday-grid">';
++    $grouped=[]; // Los partidos amateur NO se listan aquí (ver /amateur/).
+     $official_count=0;$official_fail=[];$official_checked=false;
+     if(function_exists('cof_competitions') && function_exists('cof_get_calendar_day')){
+         foreach(cof_competitions() as $comp=>$name){
+@@ -106,12 +109,13 @@ function cancha_matchday_render($day=null,$show_datebar=true){
+             $matches=array_filter($res['matches']??[],static function($m)use($day){return cancha_match_day($m['date']??'')===$day;});
+             if(!$matches)continue;
+             $official_count+=count($matches);
+-            echo '<section class="cancha-fixture-league"><div class="cancha-fixture-league-head"><h3>🏆 '.esc_html($name).'</h3><span class="cancha-league-count">'.count($matches).' partidos</span><button type="button" class="cancha-league-toggle" aria-expanded="true" aria-label="Contraer liga">⌃</button></div>';
++            echo '<section class="cancha-fixture-league" data-origin="profesional" data-comp="'.esc_attr($comp).'"><div class="cancha-fixture-league-head"><h3><span class="cancha-league-badge" aria-hidden="true">'.esc_html(cancha_pro_league_badge($comp)).'</span> '.esc_html($name).'</h3><span class="cancha-league-count">'.count($matches).' partidos</span><button type="button" class="cancha-league-toggle" aria-expanded="true" aria-label="Contraer liga">⌃</button></div>';
+             foreach($matches as $match)cancha_official_result_row($match,$comp);
+             echo '</section>';
++            if(!is_front_page() && $official_count && empty($cancha_ad_done) && has_action('cancha_ads_partidos')){$cancha_ad_done=true;do_action('cancha_ads_partidos');}
+         }
+     }
+-    if(!$grouped && !$official_count){echo '<div class="cancha-no-fixtures"><strong>No hay encuentros disponibles para esta fecha.</strong><p>Esto no significa que no se jueguen partidos: el proveedor gratuito puede mostrar una lista parcial.</p><a href="'.esc_url(cancha_day_url((new DateTimeImmutable($day,wp_timezone()))->modify('+1 day')->format('Y-m-d'),is_front_page()?home_url('/'):cancha_route('calendario'))).'">Consultar mañana →</a></div>';}
++    if(!$grouped && !$official_count){echo '<div class="cancha-no-fixtures"><strong>No recibimos partidos profesionales para esta fecha.</strong><p>Liga Profesional, Primera Nacional, Copa Argentina, Libertadores y Sudamericana se consultan en la fuente externa; si no aparece ninguno, la fuente no informó partidos ese día.</p><a href="'.esc_url(cancha_day_url((new DateTimeImmutable($day,wp_timezone()))->modify('+1 day')->format('Y-m-d'),is_front_page()?home_url('/'):cancha_route('partidos'))).'">Consultar mañana →</a></div>';}
+     echo '</div>';
+     if($official_checked)echo '<p class="cancha-data-disclosure">Fuente externa: '.esc_html(function_exists('cof_settings')?(cof_settings()['provider']==='thesportsdb'?'TheSportsDB':'API-Football'):'API').'. La cobertura puede ser parcial y los resultados no son oficiales de CANCHA. Para ampliar partidos, configurá un proveedor con cobertura y temporada habilitadas.</p>';
+     elseif(!$grouped)echo '<p class="cancha-data-disclosure">Activá CANCHA Fútbol Oficial y configurá la API para consultar las ligas profesionales.</p>';
+diff --git a/themes/cancha-glass/page.php b/themes/cancha-glass/page.php
+index 1086940..2e23828 100644
+--- a/themes/cancha-glass/page.php
++++ b/themes/cancha-glass/page.php
+@@ -8,12 +8,14 @@ $modules = [
+  'ranking'=>['COMUNIDAD','Ranking','Conocé las posiciones y tu progreso.','ranking'],
+ ];
+ if ($slug === 'campeonatos') { cancha_ligas_catalog(false); }
+-elseif ($slug === 'calendario') { cancha_matchday_render(); }
++elseif ($slug === 'partidos' || $slug === 'calendario') { echo '<div class="cancha-page-banner">'; cancha_ligas_main_banner(); echo '</div>'; cancha_matchday_render(); }
++elseif ($slug === 'amateur') { if (has_action('cancha_render_amateur')) do_action('cancha_render_amateur'); else echo '<section class="glass content-panel"><h1>Fútbol amateur</h1><div class="module-empty">Activá CANCHA Campeonatos.</div></section>'; }
++elseif ($slug === 'predicciones') { echo '<section class="cancha-pred-page" data-origin="predicciones">'; cancha_render_module('predicciones'); echo '</section>'; }
+ elseif ($slug === 'buscar') { echo '<section class="glass content-panel"><h1>Buscar en CANCHA</h1>'.get_search_form(false).'<p class="muted">Encontrá jugadores, equipos, campeonatos y noticias.</p></section>'; }
+ elseif ($slug === 'novedades') { echo '<section class="glass content-panel"><h1>Novedades de CANCHA</h1><p class="muted">Noticias, actualizaciones y conversaciones de nuestra comunidad.</p>'; cancha_news_cards(12, true); if(has_action('cancha_ads_news_feed'))do_action('cancha_ads_news_feed'); echo '</section>'; }
+ elseif ($slug === 'mi-panel') { echo cancha_my_panel_html(); }
+ elseif (isset($modules[$slug])) { $module = $modules[$slug]; ?>
+-<section class="glass content-panel module-page"><div class="eyebrow"><?php echo esc_html($module[0]); ?></div><h1><?php echo esc_html($module[1]); ?></h1><p class="muted"><?php echo esc_html($module[2]); ?></p>
++<section class="glass content-panel module-page module-<?php echo esc_attr($slug); ?>"><?php if ($slug !== 'futbol-oficial'): ?><div class="eyebrow"><?php echo esc_html($module[0]); ?></div><h1><?php echo esc_html($module[1]); ?></h1><p class="muted"><?php echo esc_html($module[2]); ?></p><?php endif; ?>
+ <?php if ($slug === 'predicciones' && !is_user_logged_in()): ?><div class="module-empty"><p>Para realizar predicciones será necesario iniciar sesión.</p><a class="button primary" href="<?php echo esc_url(add_query_arg('redirect_to', cancha_route('predicciones'), cancha_auth_url('ingresar'))); ?>">Ingresar o registrarme</a></div>
+ <?php elseif ($slug === 'predicciones' && !cancha_current_user_can_predict()): ?>
+ <div class="module-empty"><p>Para participar, verificá tu cuenta y aceptá los términos vigentes.</p><?php echo cancha_terms_accept_form(); ?><a href="<?php echo esc_url(cancha_route('mi-panel')); ?>">Ir a Mi panel</a></div>
+diff --git a/themes/cancha-glass/single-cancha_campeonato.php b/themes/cancha-glass/single-cancha_campeonato.php
+index b4204c6..7e5de57 100644
+--- a/themes/cancha-glass/single-cancha_campeonato.php
++++ b/themes/cancha-glass/single-cancha_campeonato.php
+@@ -1,9 +1,10 @@
+ <?php
+-/** Optional visual template if a future championship plugin registers CPT cancha_campeonato. */
++/** Campeonato amateur: experiencia propia (torneo · zonas · jornadas · eliminatorias · equipos · jugadores). */
+ get_header(); while(have_posts()):the_post(); $scope='torneo:'.get_post_field('post_name',get_the_ID()); ?>
+-<article <?php post_class('glass content-panel'); ?>><div class="eyebrow">CAMPEONATO AMATEUR</div><h1><?php the_title(); ?></h1>
+-<?php if (has_post_thumbnail()) the_post_thumbnail('large', ['class'=>'post-cover']); ?>
+-<div class="entry-content"><?php the_content(); ?></div>
+-<?php if (has_action('cancha_render_campeonato_detalle')) do_action('cancha_render_campeonato_detalle',get_the_ID()); ?>
+-<?php $sponsors = cancha_sponsors_html($scope,12); if ($sponsors): ?><section class="championship-sponsors"><div class="eyebrow">NOS ACOMPAÑAN</div><h2>Sponsors del campeonato</h2><?php echo $sponsors; // Escaped within renderer. ?></section><?php endif; ?>
++<article <?php post_class('cancha-amateur-tournament'); ?> data-origin="amateur">
++<?php if (function_exists('cancha_amateur_tournament_html')) { echo cancha_amateur_tournament_html(get_the_ID()); } else { ?>
++<div class="glass content-panel"><div class="eyebrow">CAMPEONATO AMATEUR</div><h1><?php the_title(); ?></h1><div class="entry-content"><?php the_content(); ?></div>
++<?php if (has_action('cancha_render_campeonato_detalle')) do_action('cancha_render_campeonato_detalle',get_the_ID()); ?></div>
++<?php } ?>
++<?php $sponsors = cancha_sponsors_html($scope,12); if ($sponsors): ?><section class="glass championship-sponsors"><div class="eyebrow">NOS ACOMPAÑAN</div><h2>Sponsors del campeonato</h2><?php echo $sponsors; // Escaped within renderer. ?></section><?php endif; ?>
+ </article><?php endwhile; get_footer(); ?>
+diff --git a/themes/cancha-glass/style.css b/themes/cancha-glass/style.css
+index c555d50..b29c565 100644
+--- a/themes/cancha-glass/style.css
++++ b/themes/cancha-glass/style.css
+@@ -2,7 +2,7 @@
+ Theme Name: CANCHA Glass
+ Author: CANCHA
+ Description: Tema CANCHA Ligas: interfaz clara adaptativa con CANCHA Core, registro seguro, sponsors, PWA y espacios modulares para complementos de fútbol.
+-Version: 1.4.0
++Version: 1.4.1
+ Requires at least: 6.4
+ Requires PHP: 8.0
+ Text Domain: cancha

@@ -1,0 +1,46 @@
+/* CANCHA Amateur 0.5.0 — experiencia propia (tarjetas, zonas, jornadas, llaves) */
+.cancha-am-hub{display:flex;flex-direction:column;gap:16px}
+.cancha-am-hero{padding:22px 18px;border-radius:20px;background:linear-gradient(135deg,#5b21b6,#7c3aed 55%,#a855f7);color:#fff}
+.cancha-am-hero .eyebrow{color:#e9d5ff}.cancha-am-hero h1{margin:6px 0;color:#fff}.cancha-am-hero p{margin:0;color:#f3e8ff}.cancha-am-hero a{color:#fff;text-decoration:underline}
+.cancha-am-section h2,.cancha-am-panel h2{font-size:17px;margin:14px 0 8px}
+.cancha-am-grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
+.cancha-am-card{display:flex;align-items:center;gap:12px;padding:14px;border-radius:16px;background:var(--glass);border:1px solid var(--border);color:var(--text);box-shadow:var(--shadow)}
+.cancha-am-card img,.cancha-am-crest{width:52px;height:52px;border-radius:14px;object-fit:cover;flex:none;display:grid;place-items:center;background:#f3edff;font-size:26px}
+:root:not([data-theme=light]) .cancha-am-crest{background:rgba(168,85,247,.18)}
+.cancha-am-card-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.cancha-am-card-body strong{font-size:15px;line-height:1.25}.cancha-am-card-body small{color:var(--muted)}
+.cancha-am-metrics{font-size:12px;color:var(--muted)}.cancha-am-chev{font-size:22px;color:var(--muted)}
+.cancha-am-pill{display:inline-block;width:max-content;padding:2px 9px;border-radius:99px;font-size:11px;font-weight:800;background:var(--soft)}
+.cancha-am-pill.is-playing{background:rgba(24,215,122,.18);color:#0a7a45}.cancha-am-pill.is-finished{background:rgba(120,120,120,.18)}.cancha-am-pill.is-upcoming{background:rgba(124,58,237,.15);color:#6d28d9}
+:root:not([data-theme=light]) .cancha-am-pill.is-playing{color:#4ade80}:root:not([data-theme=light]) .cancha-am-pill.is-upcoming{color:#c4b5fd}
+.cancha-am-block{margin-bottom:12px}.cancha-am-block h3{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:10px 0 6px}
+.cancha-am-match{padding:10px 12px;border-radius:14px;background:var(--glass);border:1px solid var(--border);margin-bottom:8px;border-left:4px solid #7c3aed}
+.cancha-am-match-main{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);grid-template-areas:"when when when" "home score away" "tag tag tag";gap:4px 10px;align-items:center;color:var(--text)}
+.cancha-am-when{grid-area:when;font-size:12px;color:var(--muted);font-weight:700}
+.cancha-am-team{font-weight:750;min-width:0;overflow-wrap:anywhere}.cancha-am-team.is-home{grid-area:home;text-align:right}.cancha-am-team.is-away{grid-area:away}
+.cancha-am-score{grid-area:score;min-width:46px;text-align:center;padding:3px 8px;border-radius:8px;background:var(--soft);font-variant-numeric:tabular-nums}
+.cancha-am-tag{grid-area:tag;font-size:11px;color:#7c3aed;font-weight:700}
+.cancha-am-thead{display:flex;gap:14px;align-items:center;padding:16px;border-radius:18px;margin-bottom:10px}
+.cancha-am-thead img{width:64px;height:64px;border-radius:16px;object-fit:cover}.cancha-am-thead h1{margin:2px 0 6px;font-size:22px}
+.cancha-am-back{font-size:12px;color:var(--muted);font-weight:700}
+.cancha-am-tabs{display:flex;gap:6px;overflow-x:auto;padding:4px 2px 8px;scrollbar-width:none;position:sticky;top:0;z-index:5}
+.cancha-am-tabs a{flex:none;padding:8px 14px;border-radius:99px;background:var(--glass);border:1px solid var(--border);font-weight:750;font-size:13px;color:var(--text)}
+.cancha-am-tabs a.is-active{background:#7c3aed;border-color:#7c3aed;color:#fff}
+.cancha-am-panel{padding:14px;border-radius:18px}
+.cancha-am-rounds{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px}
+.cancha-am-rounds a{flex:none;min-width:44px;text-align:center;padding:7px 10px;border-radius:10px;border:1px solid var(--border);font-weight:800;font-size:13px}
+.cancha-am-rounds a.is-active{background:var(--text);color:var(--bg)}
+.cancha-am-table h3{margin:14px 0 6px;font-size:15px}.cancha-am-table th a{color:inherit}
+.cancha-am-note{font-size:12px;color:var(--muted)}
+.cancha-am-cup h3{font-size:16px;margin:12px 0}
+.cancha-am-bracket{display:flex;gap:12px;overflow-x:auto;padding-bottom:8px}
+.cancha-am-bracket-col{flex:none;width:210px;display:flex;flex-direction:column;justify-content:space-around;gap:10px}
+.cancha-am-bracket-col h4{margin:0;font-size:12px;color:var(--muted);text-transform:uppercase}
+.cancha-am-tie{display:flex;flex-direction:column;padding:8px 10px;border-radius:12px;background:var(--glass-strong);border:1px solid var(--border);color:var(--text);font-size:13px}
+.cancha-am-tie span{display:flex;justify-content:space-between;gap:8px}.cancha-am-tie .is-winner{font-weight:800}.cancha-am-tie small{color:var(--muted);font-size:11px;margin-top:3px}
+.cancha-am-teams{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.cancha-am-team-card{display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px;border-radius:14px;background:var(--glass-strong);border:1px solid var(--border);text-align:center;color:var(--text)}
+.cancha-am-team-card img{width:48px;height:48px;border-radius:12px;object-fit:cover}.cancha-am-team-card>span{font-size:30px}.cancha-am-team-card small{color:var(--muted)}
+.cancha-am-squad{border:1px solid var(--border);border-radius:12px;padding:10px 12px;margin-bottom:8px;background:var(--glass-strong)}
+.cancha-am-squad summary{cursor:pointer;font-weight:800}.cancha-am-squad summary small{color:var(--muted);font-weight:600}
+.cancha-am-squad ul{list-style:none;padding:0;margin:8px 0 0;display:grid;gap:4px}.cancha-am-squad li a{display:flex;gap:8px;color:var(--text)}.cancha-am-squad li small{color:var(--muted)}

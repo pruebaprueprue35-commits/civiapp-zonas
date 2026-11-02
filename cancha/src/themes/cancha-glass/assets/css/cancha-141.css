@@ -1,0 +1,48 @@
+/* CANCHA Glass 1.4.1 — Partidos profesionales estilo lista compacta por día y liga; accesos separados Amateur. */
+.cancha-matchday[data-origin=profesional] .cancha-fixture-league{border-radius:16px;margin-bottom:12px}
+.cancha-fixture-league-head h3{display:flex;align-items:center;gap:9px;font-size:15px;margin:0;flex:1;min-width:0}
+.cancha-league-badge{display:inline-grid;place-items:center;min-width:34px;height:24px;padding:0 6px;border-radius:7px;background:var(--accent);color:#fff;font-size:10px;font-weight:800;letter-spacing:.04em}
+:root[data-theme=dark] .cancha-league-badge{color:#04261a}
+.cancha-pro-row .cancha-fixture-main{grid-template-columns:52px minmax(0,1fr) 58px minmax(0,1fr);gap:8px}
+.cancha-pro-row .cancha-fixture-team.is-home{text-align:right}
+.cancha-pro-row .cancha-fixture-team.is-away{text-align:left}
+.cancha-pro-row .cancha-fixture-result{display:inline-block;padding:4px 6px;border-radius:8px;background:var(--soft);font-variant-numeric:tabular-nums}
+.cancha-pro-row.is-final .cancha-fixture-result{background:transparent;font-weight:800}
+.cancha-pro-row.is-live .cancha-fixture-time{color:#e5484d}
+.cancha-pro-row .cancha-fixture-prediction{margin-left:60px}
+@media (max-width:520px){
+ .cancha-pro-row .cancha-fixture-main{grid-template-columns:40px minmax(0,1fr) 48px minmax(0,1fr);gap:5px;font-size:12.5px}
+ .cancha-pro-row .cancha-fixture-prediction{margin-left:0}
+}
+.cancha-fixture-prediction form{display:flex;gap:6px}
+.cancha-fixture-prediction button{min-width:40px;min-height:34px;border-radius:9px;border:1px solid var(--border);background:var(--glass-strong);color:var(--text);font-weight:800}
+.cancha-fixture-prediction button.is-picked,.cancha-fixture-prediction button[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:#fff}
+.cancha-fixture-prediction a{font-weight:750;color:var(--accent)}
+/* Inicio: acceso a Amateur (experiencia separada) */
+.cancha-amateur-cta{display:flex;align-items:center;gap:14px;margin:16px 0;padding:16px 18px;border-radius:16px;background:var(--glass);border:1px solid var(--border);color:var(--text);box-shadow:var(--shadow)}
+.cancha-amateur-cta>span:first-child{font-size:28px}.cancha-amateur-cta span:nth-child(2){flex:1;display:flex;flex-direction:column;gap:3px}.cancha-amateur-cta small{color:var(--muted)}
+.cancha-amateur-cta>span:last-child{font-size:22px;color:var(--muted)}
+/* Barra inferior: estado activo visible en ambos modos */
+.cancha-bottom-tabs a[aria-current=page]{color:var(--accent)}
+.cancha-bottom-tabs a[aria-current=page] small{font-weight:800}
+/* Selector claro/oscuro siempre visible en 390 px */
+#theme-toggle{display:inline-flex!important;align-items:center;justify-content:center;min-width:40px;min-height:40px}
+@media (max-width:520px){#theme-toggle .cancha-theme-word{display:none}}
+/* Aviso de pronóstico guardado fuera de /predicciones/ */
+.cancha-pred-toast{position:sticky;top:0;z-index:30;padding:8px 12px}
+.cancha-pred-toast .cancha-pred-notice{margin:0}
+.cancha-matchday-title{margin:2px 0;font-size:24px}
+.cancha-pro-row .cancha-fixture-main{grid-template-columns:44px minmax(0,1fr) 58px minmax(0,1fr)}
+.cancha-pro-row .cancha-fixture-time:empty{visibility:hidden}
+.cancha-pred-cta{display:flex;align-items:center;gap:10px;margin:10px 0 12px;padding:11px 14px;border-radius:14px;background:var(--soft);border:1px solid var(--border);color:var(--text);font-weight:700;font-size:13px}
+.cancha-pred-cta span:nth-child(2){flex:1}.cancha-pred-cta span:last-child{color:var(--muted);font-size:18px}
+.cancha-fixture-prediction{padding:6px 9px;margin:4px 0 0}
+@media (max-width:520px){
+ .cancha-datebar .cancha-day-arrow{display:none}
+ .cancha-datebar .cancha-day-scroll{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));overflow:visible;gap:2px;flex:1}
+ .cancha-datebar .cancha-day-item{min-width:0;padding:7px 2px;text-align:center}
+ .cancha-datebar .cancha-day-item span{font-size:11.5px;white-space:normal;line-height:1.15}
+ .cancha-pro-row .cancha-fixture-main{grid-template-columns:30px minmax(0,1fr) 50px minmax(0,1fr)}
+}
+.cancha-page-banner .ligas-featured-ad{margin-left:0!important;margin-right:0!important;width:100%!important;max-width:100%;box-sizing:border-box}.cancha-page-banner{overflow:hidden;border-radius:18px;margin-bottom:12px}
+:root[data-theme=dark] .ligas-header-search{background:var(--glass-strong);border:1px solid var(--border)}:root[data-theme=dark] .ligas-header-search input{color:var(--text);background:transparent}:root[data-theme=dark] .ligas-header-search input::placeholder{color:var(--muted)}
